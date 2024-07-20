@@ -62,6 +62,7 @@ if(INTERN_BUILD_ATEN_OPS)
   list(APPEND Caffe2_GPU_CU_SRCS_W_SORT_BY_KEY ${ATen_CUDA_CU_SRCS_W_SORT_BY_KEY})
   list(APPEND Caffe2_HIP_SRCS ${ATen_HIP_SRCS})
   list(APPEND Caffe2_MPS_SRCS ${ATen_MPS_SRCS})
+  list(APPEND Caffe2_MLX_SRCS ${ATen_MLX_SRCS})
   list(APPEND Caffe2_XPU_SRCS ${ATen_XPU_SRCS})
   list(APPEND Caffe2_HIP_SRCS ${ATen_HIP_SRCS_W_SORT_BY_KEY})
   list(APPEND Caffe2_CPU_TEST_SRCS ${ATen_CPU_TEST_SRCS})
@@ -169,6 +170,11 @@ if(PRINT_CMAKE_DEBUG_INFO)
 
   message(STATUS "MPS sources: ")
   foreach(tmp ${Caffe2_MPS_SRCS})
+    message(STATUS "  " ${tmp})
+  endforeach()
+
+  message(STATUS "MLX sources: ")
+  foreach(tmp ${Caffe2_MLX_SRCS})
     message(STATUS "  " ${tmp})
   endforeach()
 
@@ -705,6 +711,10 @@ if(USE_MPS)
       file(TOUCH ${CMAKE_BINARY_DIR}/aten/src/ATen/metallib_dummy.cpp)
       list(APPEND Caffe2_CPU_SRCS ${CMAKE_BINARY_DIR}/aten/src/ATen/metallib_dummy.cpp)
   endif()
+endif()
+
+if(USE_MLX)
+  list(APPEND Caffe2_CPU_SRCS ${Caffe2_MLX_SRCS})
 endif()
 
 # NOTE [ Linking AVX and non-AVX files ]
