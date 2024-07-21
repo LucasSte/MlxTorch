@@ -273,8 +273,9 @@ option(USE_PYTORCH_METAL "Use Metal for PyTorch iOS build" OFF)
 option(USE_PYTORCH_METAL_EXPORT "Export Metal models on MacOSX desktop" OFF)
 option(USE_NATIVE_ARCH "Use -march=native" OFF)
 cmake_dependent_option(USE_MPS "Use MPS for macOS build" ON "MPS_FOUND" OFF)
-# TODO: Ste: MLX is not dependent on MPS
+# TODO: lpt: MLX is not dependent on MPS
 cmake_dependent_option(USE_MLX "Use MLX for macOS build" ON "MPS_FOUND" OFF)
+#option(USE_MLX "Use MLX for macOS build" ON)
 cmake_dependent_option(USE_NCCL "Use NCCL" ON
                        "USE_CUDA OR USE_ROCM;UNIX;NOT APPLE" OFF)
 cmake_dependent_option(USE_RCCL "Use RCCL" ON USE_NCCL OFF)
@@ -1187,6 +1188,7 @@ if(APPLE)
   if(USE_MPS)
     string(APPEND CMAKE_OBJCXX_FLAGS " -DUSE_MPS -fno-objc-arc")
     string(APPEND CMAKE_CXX_FLAGS " -DUSE_MPS")
+    string(APPEND CMAKE_CXX_FLAGS " -DUSE_MLX")
     string(
       APPEND
       CMAKE_SHARED_LINKER_FLAGS
