@@ -113,6 +113,9 @@ file(GLOB_RECURSE native_mps_mm "native/mps/*.mm")
 file(GLOB_RECURSE native_mps_metal "native/mps/*.metal")
 file(GLOB_RECURSE native_mps_h "native/mps/*.h")
 
+# MLX
+file(GLOB mlx_cpp "mlx/*.cpp")
+
 file(GLOB native_sparse_cpp "native/sparse/*.cpp")
 file(GLOB native_quantized_cpp
             "native/quantized/*.cpp"
@@ -600,6 +603,10 @@ if(USE_MPS)
             metal_to_metallib_h(${SHADER} ${SHADER_HDR_NAME})
         endforeach()
     endif()
+endif()
+
+if(USE_MLX)
+    set(ATen_MLX_SRCS ${ATen_MLX_SRCS} ${mlx_cpp})
 endif()
 
 if(USE_ROCM)

@@ -29,6 +29,7 @@ void TORCH_API manual_seed(uint64_t seed);
 /// encoded GPU operations before returning.
 void TORCH_API synchronize();
 
+/// TODO: lpt: I might need something similar for mlx
 /// Submits the currently active command buffer to run on the MPS device.
 void TORCH_API commit();
 
