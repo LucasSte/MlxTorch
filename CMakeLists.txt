@@ -163,6 +163,14 @@ if(APPLE)
         PATHS ${_SDK_SEARCH_PATH}
         NO_DEFAULT_PATH)
 
+      # TODO: Ste: This step can be automated
+      find_library(
+              _MLX_PATH
+              NAMES mlx libmlx
+              PATHS "/Users/lucasste/Documents/mlx/build"
+              NO_DEFAULT_PATH
+      )
+
       if(_MPS_supported_os_version
          AND _MPS_fwrk_path_
          AND _MPS_sdk_path_)
@@ -171,6 +179,13 @@ if(APPLE)
       else()
         message(STATUS "MPSGraph framework not found")
       endif()
+
+      if(_MLX_PATH)
+        message(STATUS "MLX library found")
+      else()
+        message(STATUS "MLX library NOT found")
+      endif()
+
     else()
       message(STATUS "MPS: unable to get MacOS sdk version")
       message(STATUS "MPSGraph framework not found")
