@@ -163,7 +163,7 @@ if(APPLE)
         PATHS ${_SDK_SEARCH_PATH}
         NO_DEFAULT_PATH)
 
-      # TODO: Ste: This step can be automated
+      # TODO: Ste: This step can be automated. Yes it can!
       find_library(
               _MLX_PATH
               NAMES mlx libmlx
