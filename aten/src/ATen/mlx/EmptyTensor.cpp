@@ -8,6 +8,8 @@
 namespace at::detail {
 // Try following CUDA's implementation. If that does not work,
 // try the MPS one.
+// TODO: Create emtpy mlx as well.
+
 TensorBase empty_strided_mlx(
     IntArrayRef size,
     IntArrayRef stride,
