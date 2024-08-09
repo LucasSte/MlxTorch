@@ -142,6 +142,7 @@ class DispatchKey(Enum):
     XLA = auto()
     MTIA = auto()
     MPS = auto()
+    MLX = auto()
     IPU = auto()
     XPU = auto()
     HPU = auto()
@@ -270,6 +271,7 @@ STRUCTURED_DISPATCH_KEYS = {
     DispatchKey.CUDA,
     DispatchKey.CPU,
     DispatchKey.XPU,
+    DispatchKey.MLX,
 }
 UFUNC_DISPATCH_KEYS = {DispatchKey.CUDA, DispatchKey.CPU}
 
@@ -281,6 +283,7 @@ dispatch_keys = [
     DispatchKey.MkldnnCPU,
     DispatchKey.CUDA,
     DispatchKey.MPS,
+    DispatchKey.MLX,
     DispatchKey.XPU,
     DispatchKey.SparseXPU,
     DispatchKey.SparseCUDA,

@@ -23,9 +23,9 @@ void MLXAllocator::copy_data(void* dest, const void* src, std::size_t count) con
   default_copy_data(dest, src, count);
 }
 
-MLXAllocator getMLXAllocator() {
+MLXAllocator* getMLXAllocator() {
   static MLXAllocator allocator;
-  return allocator;
+  return &allocator;
 }
 
 }
