@@ -4,6 +4,17 @@
 
 namespace at::detail {
 
+C10_EXPORT TensorBase empty_mlx(
+    IntArrayRef size,
+    std::optional<ScalarType> dtype_opt,
+    std::optional<Layout> layout_opt,
+    std::optional<Device> device_opt,
+    std::optional<bool> pin_memory_opt,
+    std::optional<c10::MemoryFormat> memory_format_opt);
+
+C10_EXPORT TensorBase empty_mlx(
+    IntArrayRef size, const TensorOptions &options);
+
 C10_EXPORT TensorBase empty_strided_mlx(
     IntArrayRef size,
     IntArrayRef stride,

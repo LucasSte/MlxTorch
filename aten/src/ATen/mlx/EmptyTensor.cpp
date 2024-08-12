@@ -8,7 +8,64 @@
 namespace at::detail {
 // Try following CUDA's implementation. If that does not work,
 // try the MPS one.
-// TODO: Create emtpy mlx as well.
+
+TensorBase empty_mlx(
+    IntArrayRef size,
+    std::optional<ScalarType> dtype_opt,
+    std::optional<Layout> layout_opt,
+    std::optional<Device> device_opt,
+    std::optional<bool> pin_memory_opt,
+    std::optional<c10::MemoryFormat> memory_format_opt) {
+
+    auto device = device_or_default(device_opt);
+    TORCH_INTERNAL_ASSERT_DEBUG_ONLY(device.type() == DeviceType::MLX);
+    TORCH_CHECK_NOT_IMPLEMENTED(
+        layout_or_default(layout_opt) == Layout::Strided,
+        "Only strided implemented for MLX"
+        );
+
+    check_size_nonnegative(size);
+
+    auto* allocator = at::mlx::getMLXAllocator();
+    int64_t n_elements = c10::multiply_integers(size);
+    auto dtype = dtype_or_default(dtype_opt);
+    TORCH_CHECK_TYPE(dtype != ScalarType::Double, "Not implemented for MLX");
+
+    auto dtype_meta = scalarTypeToTypeMeta(dtype);
+    int64_t size_bytes = n_elements * dtype_meta.itemsize();
+    auto storage_impl = c10::make_intrusive<StorageImpl>(
+        c10::StorageImpl::use_byte_size_t(),
+        size_bytes,
+        allocator->allocate(size_bytes),
+        allocator,
+        true);
+
+    auto tensor = at::detail::make_tensor<TensorImpl>(
+        storage_impl, DispatchKey::MLX, dtype_meta
+        );
+
+    if (size.size() != 1 || size[0] != 0) {
+      tensor.unsafeGetTensorImpl()->set_sizes_contiguous(size);
+    }
+    auto memory_format = memory_format_opt.value_or(MemoryFormat::Contiguous);
+    tensor.unsafeGetTensorImpl()->empty_tensor_restride(memory_format);
+
+    if (C10_UNLIKELY(at::globalContext().deterministicAlgorithms() && at::globalContext().deterministicFillUninitializedMemory())) {
+      at::native::fill_empty_deterministic_(tensor);
+    }
+    return tensor;
+}
+
+TensorBase empty_mlx(
+    IntArrayRef size, const TensorOptions &options) {
+  return at::detail::empty_mlx(
+      size,
+      optTypeMetaToScalarType(options.dtype_opt()),
+      options.layout_opt(),
+      options.device_opt(),
+      options.pinned_memory_opt(),
+      options.memory_format_opt());
+}
 
 TensorBase empty_strided_mlx(
     IntArrayRef size,
