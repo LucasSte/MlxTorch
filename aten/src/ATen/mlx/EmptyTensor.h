@@ -24,6 +24,9 @@ C10_EXPORT TensorBase empty_strided_mlx(
 C10_EXPORT TensorBase empty_strided_mlx(
     IntArrayRef size,
     IntArrayRef stride,
-    const TensorOptions &options);
+    std::optional<ScalarType> dtype_opt,
+    std::optional<Layout> layout_opt,
+    std::optional<Device> device_opt,
+    std::optional<bool> pin_memory_opt);
 
 } // namespace at::detail

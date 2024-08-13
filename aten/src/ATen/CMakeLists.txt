@@ -116,6 +116,8 @@ file(GLOB_RECURSE native_mps_h "native/mps/*.h")
 # MLX
 file(GLOB mlx_cpp "mlx/*.cpp")
 file(GLOB mlx_h "mlx/*.h")
+file(GLOB native_mlx_cpp "native/mlx/*.cpp")
+file(GLOB native_mlx_h "native/mlx/*.h")
 
 file(GLOB native_sparse_cpp "native/sparse/*.cpp")
 file(GLOB native_quantized_cpp
@@ -607,7 +609,7 @@ if(USE_MPS)
 endif()
 
 if(USE_MLX)
-    set(ATen_MLX_SRCS ${ATen_MLX_SRCS} ${mlx_cpp} ${mlx_h})
+    set(ATen_MLX_SRCS ${ATen_MLX_SRCS} ${mlx_cpp} ${mlx_h} ${native_mlx_h} ${native_mlx_cpp})
 endif()
 
 if(USE_ROCM)
