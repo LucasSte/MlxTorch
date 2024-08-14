@@ -2,6 +2,7 @@
 #include <ATen/EmptyTensor.h>
 #include <ATen/Tensor.h>
 #include <ATen/mlx/EmptyTensor.h>
+#include <ATen/native/TensorFactories.h>
 #include "MLXAllocator.h"
 
 namespace at::detail {
@@ -76,6 +77,7 @@ TensorBase empty_strided_mlx(
   // TODO: Ste: Check is MLX is available
   auto device = device_or_default(device_opt);
   TORCH_INTERNAL_ASSERT(device.is_mlx());
+  auto dtype = dtype_or_default(dtype_opt);
   TORCH_CHECK_TYPE(dtype != ScalarType::Double, "Double not supported");
   mlx::MLXAllocator* allocator = at::mlx::getMLXAllocator();
   constexpr c10::DispatchKeySet mlx_dks(c10::DispatchKey::MLX);
