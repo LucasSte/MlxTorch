@@ -44,6 +44,7 @@ TensorBase TensorBase::to(
     bool copy,
     std::optional<at::MemoryFormat> memory_format) const {
   Tensor self(*this);
+  std::cout << "Calling TO!" << std::endl;
   return at::_ops::to_dtype_layout::call(
       self, optTypeMetaToScalarType(options.dtype_opt()),
       options.layout_opt(), options.device_opt(),

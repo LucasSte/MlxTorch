@@ -223,6 +223,7 @@ static Tensor & copy_impl(Tensor & self, const Tensor & src, bool non_blocking) 
   // Both the _copy_from calls above will be dispatched to XLA's _copy_from kernels.
 
   if (!is_supported_device(src.device()) || !is_supported_device(self.device())) {
+    std::cout << "Called copy_impl!" << std::endl;
     at::_copy_from(src, self, non_blocking);
     return self;
   }
@@ -314,11 +315,13 @@ static Tensor & copy_impl(Tensor & self, const Tensor & src, bool non_blocking) 
 Tensor copy_meta(const Tensor& self, const Tensor& src, bool non_blocking) {
   // Must directly use self(), so we can dispatch properly is self is a subclass
   auto r = clone_preserve_strides(self);
+  std::cout << "called copy_meta" << std::endl;
   r.copy_(src, non_blocking);
   return r;
 }
 
 Tensor copy(const Tensor& self, const Tensor& src, bool non_blocking) {
+  std::cout << "Called copy!" << std::endl;
   at::Tensor r;
   // copy() is the "functional" form of copy_(). It exists so we can properly functionalize copy_(), but:
   // (1) It isn't exposed to the frontend (no python bindings)
@@ -351,6 +354,7 @@ Tensor copy(const Tensor& self, const Tensor& src, bool non_blocking) {
 }
 
 Tensor& copy_(Tensor& self, const Tensor& src, bool non_blocking) {
+  std::cout << "Called copy_ 2" << std::endl;
   auto maybe_outnames = namedinference::compute_broadcast_outnames(self, src);
   {
     NoNamesGuard guard;

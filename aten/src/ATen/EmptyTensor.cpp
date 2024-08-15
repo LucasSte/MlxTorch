@@ -8,10 +8,12 @@
 #include <c10/util/safe_numerics.h>
 
 #include <limits>
+#include <iostream>
 
 namespace at::detail {
 namespace {
 c10::Allocator* GetCPUAllocatorMaybePinned(bool pin_memory) {
+  std::cout << "Calling allocator!" << std::endl;
   if (pin_memory) {
     // NB: This is not quite right, if you somehow had both CUDA and PrivateUse1 initialized
     // in the same PyTorch build, you would ONLY ever get the CUDA pinned memory allocator.
@@ -259,6 +261,7 @@ TensorBase empty_strided_symint_generic(
 
 TensorBase empty_cpu(IntArrayRef size, ScalarType dtype, bool pin_memory,
                      std::optional<c10::MemoryFormat> memory_format_opt) {
+  std::cout << "Calling empty cpu" << std::endl;
   auto allocator = GetCPUAllocatorMaybePinned(pin_memory);
   constexpr c10::DispatchKeySet cpu_ks(c10::DispatchKey::CPU);
   return empty_generic(size, allocator, cpu_ks, dtype, memory_format_opt);
@@ -292,6 +295,7 @@ TensorBase empty_cpu(
 
 TensorBase empty_strided_cpu(IntArrayRef size, IntArrayRef stride,
                              ScalarType dtype, bool pin_memory) {
+  std::cout << "Calling empty strided cpu" << std::endl;
   auto allocator = at::detail::GetCPUAllocatorMaybePinned(pin_memory);
   constexpr c10::DispatchKeySet cpu_ks(c10::DispatchKey::CPU);
   return at::detail::empty_strided_generic(
