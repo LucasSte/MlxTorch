@@ -61,6 +61,7 @@
 #include <c10/core/impl/DeviceGuardImplInterface.h>
 #include <algorithm>
 #include <numeric>
+#include <iostream>
 
 namespace at::native {
 
@@ -356,6 +357,13 @@ Tensor _to_copy(
           r.copy_(self, non_blocking);
           set_quantizer_(r, quantizer);
         } else {
+          std::cout << "Calling empty_strided" << std::endl;
+          std::cout << "From dev: " << (int)self.device().type() << std::endl;
+          if (device) {
+            std::cout << "To dev: " << (int)device->type() << std::endl;
+          } else {
+            std::cout << "No device specified" << std::endl;
+          }
           r = at::empty_strided(
               self.sizes(), self.strides(), options.pinned_memory(pin_out));
           r.copy_(self, non_blocking);
