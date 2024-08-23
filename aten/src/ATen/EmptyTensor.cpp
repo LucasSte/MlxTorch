@@ -6,6 +6,7 @@
 #include <ATen/detail/PrivateUse1HooksInterface.h>
 #include <c10/core/CPUAllocator.h>
 #include <c10/util/safe_numerics.h>
+#include <ATen/mlx/MLXAllocator.h>
 
 #include <limits>
 #include <iostream>
@@ -32,7 +33,8 @@ c10::Allocator* GetCPUAllocatorMaybePinned(bool pin_memory) {
       TORCH_CHECK(false, "Need to provide pin_memory allocator to use pin memory.")
     }
   }
-  return c10::GetCPUAllocator();
+  //return c10::GetCPUAllocator();
+  return at::mlx::getMLXCpuAllocator();
 }
 
 #ifndef C10_MOBILE
