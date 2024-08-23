@@ -40,7 +40,7 @@ void MLXCpuAllocator::Delete(void* ptr) {
 DataPtr MLXCpuAllocator::allocate(size_t n) {
   // NOTE: I modified mlx to allocate n+8, and return ptr+8 for the raw ptr
   ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::malloc_or_wait(n);
-  return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXCpuAllocator::Delete, at::Device(at::DeviceType::MLX, 0)};
+  return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXCpuAllocator::Delete, at::Device(at::DeviceType::CPU)};
 }
 
 DeleterFnPtr MLXCpuAllocator::raw_deleter() const {
@@ -49,6 +49,11 @@ DeleterFnPtr MLXCpuAllocator::raw_deleter() const {
 
 void MLXCpuAllocator::copy_data(void* dest, const void* src, std::size_t count) const {
   default_copy_data(dest, src, count);
+}
+
+MLXCpuAllocator *getMLXCpuAllocator() {
+  static MLXCpuAllocator allocator;
+  return &allocator;
 }
 
 }
