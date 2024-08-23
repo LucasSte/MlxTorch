@@ -86,6 +86,21 @@ if(NOT BUILD_LIBTORCHLESS)
     target_compile_options_if_supported(c10 PRIVATE "-Werror=shadow")
   endif()
 
+  # MLX Allocator
+  include(../cmake/Metal.cmake)
+  # We need to link the system frameworks explicitly
+  find_library(metal NAMES Metal)
+  find_library(mps NAMES MetalPerformanceShaders)
+  find_library(foundation NAMES Foundation)
+  find_library(accelerate NAMES Accelerate)
+  target_link_libraries(c10 PUBLIC ${metal} ${mps} ${foundation} ${accelerate})
+  find_library(
+          mlx_lib
+          NAMES mlx libmlx
+          PATHS "/Users/lucasste/Documents/mlx/build"
+  )
+  target_link_libraries(c10 PRIVATE  ${mlx_lib})
+
   # ---[ Dependency of c10
   if(C10_USE_GFLAGS)
     target_link_libraries(c10 PUBLIC gflags)

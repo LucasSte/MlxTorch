@@ -6,6 +6,8 @@
 #include <c10/mobile/CPUCachingAllocator.h>
 #include <c10/mobile/CPUProfilingAllocator.h>
 #include <c10/util/Logging.h>
+#include <mlx/allocator.h>
+#include <iostream>
 
 // TODO: rename flag to C10
 C10_DEFINE_bool(
@@ -156,8 +158,38 @@ class DefaultMobileCPUAllocator final : public at::Allocator {
 
 void NoDelete(void*) {}
 
+// The MLX Cpu allocator
+struct TORCH_API MLXCpuAllocator final : public c10::Allocator {
+ public:
+  DataPtr allocate(size_t n) override {
+    // NOTE: I modified mlx to allocate n+8, and return ptr+8 for the raw ptr
+    std::cout << "Allocating on MLX CPU" << std::endl;
+    ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::malloc_or_wait(n);
+    return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXCpuAllocator::Delete, at::Device(at::DeviceType::CPU)};
+  }
+
+  DeleterFnPtr raw_deleter() const override {
+    return &MLXCpuAllocator::Delete;
+  }
+  void copy_data(void * dest, const void * src, std::size_t count) const override {
+    default_copy_data(dest, src, count);
+  }
+
+ private:
+  static void Delete(void *ptr) {
+    if (ptr) {
+      uint8_t * ctx = (uint8_t*)ptr - 8;
+      uint64_t original = *(uint64_t*)ctx;
+      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{(void*) original};
+      ::mlx::core::allocator::free(buf);
+    }
+  }
+};
+
 at::Allocator* GetCPUAllocator() {
-  return GetAllocator(DeviceType::CPU);
+  // return GetAllocator(DeviceType::CPU);
+  static MLXCpuAllocator allocator;
+  return &allocator;
 }
 
 void SetCPUAllocator(at::Allocator* alloc, uint8_t priority) {
