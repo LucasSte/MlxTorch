@@ -58,6 +58,8 @@
 #include <ATen/native/NonSymbolicBC.h>
 #include <ATen/native/SparseTensorUtils.h>
 #include <ATen/native/TensorConversions.h>
+#include <ATen/mlx/MLXAllocator.h>
+#include <mlx/allocator.h>
 #include <c10/core/impl/DeviceGuardImplInterface.h>
 #include <algorithm>
 #include <numeric>
@@ -357,6 +359,7 @@ Tensor _to_copy(
           r.copy_(self, non_blocking);
           set_quantizer_(r, quantizer);
         } else {
+
           std::cout << "Calling empty_strided" << std::endl;
           std::cout << "From dev: " << (int)self.device().type() << std::endl;
           if (device) {
@@ -364,6 +367,67 @@ Tensor _to_copy(
           } else {
             std::cout << "No device specified" << std::endl;
           }
+
+          if (device) {
+            // TODO: This could go in a separate function
+            if (self.device().type() == at::DeviceType::CPU && device->type() == at::DeviceType::MLX) {
+              std::cout << "I am passing from cpu to mlx" << std::endl;
+              caffe2::TypeMeta mlx_dtype = self.dtype();
+              auto size_bytes = self.storage().sym_nbytes();
+
+              const at::DataPtr& data_ptr = self.storage().data_ptr();
+//              std::cout << "raw_ptr: " << (uint64_t)data_ptr.get() << std::endl;
+//              uint8_t* mtl_addr_ptr = (uint8_t*) data_ptr.get() - 8;
+//              uint64_t mlt_addr = *(uint64_t*)mtl_addr_ptr;
+//              std::cout << "MTL addr: " << mlt_addr << std::endl;
+//              void* new_raw_ptr = (void*)mlt_addr;
+
+              at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
+              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
+              auto storage_impl = c10::make_intrusive<StorageImpl>(
+                  c10::StorageImpl::use_byte_size_t(),
+                  size_bytes,
+                  std::move(mlx_ptr),
+                  mlx_allocator,
+                  true
+                  );
+              constexpr c10::DispatchKeySet mlx_dks(c10::DispatchKey::MLX);
+              auto tensor = at::detail::make_tensor_base<TensorImpl>(
+                  std::move(storage_impl), mlx_dks, mlx_dtype
+                  );
+              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides());
+              return tensor;
+            } else if(self.device().type() == at::DeviceType::MLX && device->type() == at::DeviceType::CPU) {
+              std::cout << "I am passing from mlx to cpu" << std::endl;
+              caffe2::TypeMeta mlx_dtype = self.dtype();
+              auto size_bytes = self.storage().sym_nbytes();
+              const at::DataPtr& data_ptr = self.storage().data_ptr();
+
+//              void *raw_ptr = data_ptr.get();
+//              std::cout << "MTL2 addr: " << (uint64_t)raw_ptr << std::endl;
+//              ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{raw_ptr};
+//              std::cout << "raw_ptr2: " << (uint64_t)buf.raw_ptr() << std::endl;
+
+              at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
+              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
+              auto storage_impl = c10::make_intrusive<StorageImpl>(
+                  c10::StorageImpl::use_byte_size_t(),
+                  size_bytes,
+                  std::move(mlx_ptr),
+                  mlx_allocator,
+                  true
+              );
+              constexpr c10::DispatchKeySet cpu_dks(c10::DispatchKey::CPU);
+              auto tensor = at::detail::make_tensor_base<TensorImpl>(
+                  std::move(storage_impl), cpu_dks, mlx_dtype
+              );
+              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides());
+              std::cout << "Finished copy" << std::endl;
+              return tensor;
+            }
+          }
+
+
           r = at::empty_strided(
               self.sizes(), self.strides(), options.pinned_memory(pin_out));
           r.copy_(self, non_blocking);

@@ -5,14 +5,19 @@ namespace at::mlx {
 
 void MLXAllocator::Delete(void* ptr) {
     if (ptr) {
-      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ptr};
-      ::mlx::core::allocator::free(buf);
+//      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ptr};
+//      ::mlx::core::allocator::free(buf);
+        uint8_t * ctx = (uint8_t*)ptr - 8;
+        uint64_t original = *(uint64_t*)ctx;
+        ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{(void*) original};
+        ::mlx::core::allocator::free(buf);
     }
 }
 
 DataPtr MLXAllocator::allocate(size_t n) {
+  // Note: I am still allocating extra eight bytes here.
     ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::malloc_or_wait(n);
-    return DataPtr{buf.ptr(), buf.ptr(), &MLXAllocator::Delete, at::Device(at::DeviceType::MLX, 0)};
+    return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXAllocator::Delete, at::Device(at::DeviceType::MLX, 0)};
 }
 
 DeleterFnPtr MLXAllocator::raw_deleter() const {
