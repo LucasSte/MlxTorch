@@ -4146,6 +4146,7 @@
     CUDA: mm_out_cuda
     MPS: mm_out_mps
     XPU: mm_out_xpu
+    MLX: mm_out_mlx
     SparseCPU, SparseCUDA: _sparse_mm_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: _sparse_csr_mm_out
 

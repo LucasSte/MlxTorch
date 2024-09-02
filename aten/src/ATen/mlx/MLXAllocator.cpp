@@ -1,5 +1,6 @@
 #include "MLXAllocator.h"
 #include <mlx/allocator.h>
+#include <iostream>
 
 namespace at::mlx {
 
@@ -16,6 +17,7 @@ void MLXAllocator::Delete(void* ptr) {
 
 DataPtr MLXAllocator::allocate(size_t n) {
   // Note: I am still allocating extra eight bytes here.
+  std::cout << "Allocating " << n << " bytes" << std::endl;
     ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::malloc_or_wait(n);
     return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXAllocator::Delete, at::Device(at::DeviceType::MLX, 0)};
 }

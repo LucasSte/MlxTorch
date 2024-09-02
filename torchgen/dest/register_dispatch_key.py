@@ -62,6 +62,8 @@ def gen_registration_headers(
             headers.append("#include <ATen/cuda/EmptyTensor.h>")
     elif backend_index.dispatch_key == DispatchKey.MPS:
         headers.append("#include <ATen/mps/EmptyTensor.h>")
+    elif backend_index.dispatch_key == DispatchKey.MLX:
+        headers.append("#include <ATen/mlx/EmptyTensor.h>")
     elif backend_index.dispatch_key == DispatchKey.XPU:
         # XPU specific, this header resides in third_party/torch-xpu-ops
         headers.append("#include <ATen/xpu/EmptyTensor.h>")
@@ -91,6 +93,7 @@ def gen_empty_impl_names(
         DispatchKey.CUDA,
         DispatchKey.MPS,
         DispatchKey.XPU,
+        DispatchKey.MLX,
     ):
         dispatch = str(backend_index.dispatch_key).lower()
         empty_impl = f"at::detail::empty_{dispatch}"
@@ -644,6 +647,7 @@ if (C10_UNLIKELY(maybe_proxy.has_value())) {
                 DispatchKey.CUDA,
                 DispatchKey.MPS,
                 DispatchKey.XPU,
+                DispatchKey.MLX,
                 DispatchKey.CompositeExplicitAutogradNonFunctional,
             )
             return f"""{maybe_set_guard_line}

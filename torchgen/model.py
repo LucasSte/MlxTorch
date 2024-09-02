@@ -59,7 +59,7 @@ class Variant(Enum):
 DEFAULT_KERNEL_NAMESPACE = "at::native"
 
 # NOTE: Keep the list in sync with `DispatchKey` in c10/core/DispatchKey.h
-BACKEND_COMPONENTS = "CPU CUDA HIP XLA MTIA MPS IPU XPU HPU VE Lazy Meta PrivateUse1 PrivateUse2 PrivateUse3".split()
+BACKEND_COMPONENTS = "CPU CUDA HIP XLA MTIA MPS MLX IPU XPU HPU VE Lazy Meta PrivateUse1 PrivateUse2 PrivateUse3".split()
 FUNCTIONALITY_KEYS = [
     "",
     "Quantized",
@@ -158,6 +158,7 @@ class DispatchKey(Enum):
     QuantizedXLA = auto()
     QuantizedMTIA = auto()
     QuantizedMPS = auto()
+    QuantizedMLX = auto()
     QuantizedIPU = auto()
     QuantizedXPU = auto()
     QuantizedHPU = auto()
@@ -173,6 +174,7 @@ class DispatchKey(Enum):
     SparseXLA = auto()
     SparseMTIA = auto()
     SparseMPS = auto()
+    SparseMLX = auto()
     SparseIPU = auto()
     SparseXPU = auto()
     SparseHPU = auto()
@@ -188,6 +190,7 @@ class DispatchKey(Enum):
     SparseCsrXLA = auto()
     SparseCsrMTIA = auto()
     SparseCsrMPS = auto()
+    SparseCsrMLX = auto()
     SparseCsrIPU = auto()
     SparseCsrXPU = auto()
     SparseCsrHPU = auto()
@@ -203,6 +206,7 @@ class DispatchKey(Enum):
     NestedTensorXLA = auto()
     NestedTensorMTIA = auto()
     NestedTensorMPS = auto()
+    NestedTensorMLX = auto()
     NestedTensorIPU = auto()
     NestedTensorXPU = auto()
     NestedTensorHPU = auto()
@@ -218,6 +222,7 @@ class DispatchKey(Enum):
     AutogradXLA = auto()
     AutogradMTIA = auto()
     AutogradMPS = auto()
+    AutogradMLX = auto()
     AutogradIPU = auto()
     AutogradXPU = auto()
     AutogradHPU = auto()
