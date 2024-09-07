@@ -45,6 +45,8 @@ Scalar _local_scalar_dense_cpu(const Tensor& self) {
     self.scalar_type(),
     "_local_scalar_dense_cpu",
     AT_WRAP([&] {
+        const at::DataPtr& data_ptr = self.storage().data_ptr();
+        std::cout << "scalar addr: " << data_ptr.get() << std::endl;
       scalar_t value = *self.const_data_ptr<scalar_t>();
       r = Scalar(value);
     }),
