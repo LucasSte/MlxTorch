@@ -194,6 +194,7 @@ struct TORCH_API DispatchStubImpl {
     void* hip_dispatch_ptr;
     void* mps_dispatch_ptr;
     void* mtia_dispatch_ptr;
+    void* mlx_dispatch_ptr;
   #if defined(USE_XPU)
     void* xpu_dispatch_ptr;
   #endif
@@ -203,6 +204,7 @@ struct TORCH_API DispatchStubImpl {
     void* cuda_dispatch_ptr = nullptr;
     void* hip_dispatch_ptr = nullptr;
     void* mps_dispatch_ptr = nullptr;
+    void* mlx_dispatch_ptr = nullptr;
     void* mtia_dispatch_ptr = nullptr;
   #if defined(USE_XPU)
     void* xpu_dispatch_ptr = nullptr;
@@ -265,6 +267,10 @@ public:
   }
 
   void set_mps_dispatch_ptr(FnPtr fn_ptr) {
+    impl.mps_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
+  }
+
+  void set_mlx_dispatch_ptr(FnPtr fn_ptr) {
     impl.mps_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
   }
 
@@ -342,6 +348,13 @@ template <typename DispatchStub>
 struct RegisterMPSDispatch {
   RegisterMPSDispatch(DispatchStub &stub, typename DispatchStub::FnPtr value) {
     stub.set_mps_dispatch_ptr(value);
+  }
+};
+
+template <typename DispatchStub>
+struct RegisterMLXDispatch {
+  RegisterMLXDispatch(DispatchStub &stub, typename DispatchStub::FnPtr value) {
+    stub.set_mlx_dispatch_ptr(value);
   }
 };
 
@@ -443,6 +456,9 @@ struct RegisterPRIVATEUSE1Dispatch {
 
 #define REGISTER_MPS_DISPATCH(name, fn) \
   static RegisterMPSDispatch<struct name##_DECLARE_DISPATCH_type> name ## __register(name, fn);
+
+#define REGISTER_MLX_DISPATCH(name, fn) \
+  static RegisterMLXDispatch<struct name##_DECLARE_DISPATCH_type> name ## __register(name, fn);
 
 #define REGISTER_MTIA_DISPATCH(name, fn) \
   static RegisterMTIADispatch<struct name##_DECLARE_DISPATCH_type> name ## __register(name, fn);

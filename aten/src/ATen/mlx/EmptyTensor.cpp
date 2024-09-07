@@ -113,4 +113,17 @@ TensorBase empty_strided_mlx(
   return result;
 }
 
+TensorBase empty_strided_mlx(
+    IntArrayRef size,
+    IntArrayRef stride,
+    const TensorOptions &options) {
+  return at::detail::empty_strided_mlx(
+      size,
+      stride,
+      optTypeMetaToScalarType(options.dtype_opt()),
+      options.layout_opt(),
+      options.device_opt(),
+      options.pinned_memory_opt());
+}
+
 } // namespace at::detail

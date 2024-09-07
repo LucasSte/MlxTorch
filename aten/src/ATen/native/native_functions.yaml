@@ -8939,7 +8939,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: eq_Tensor_out
+    CPU, CUDA, MLX: eq_Tensor_out
     MPS: eq_tensor_out_mps
     QuantizedCPU: eq_out_quantized_cpu
   tags: pointwise

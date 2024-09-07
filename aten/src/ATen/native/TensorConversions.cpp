@@ -382,6 +382,21 @@ Tensor _to_copy(
 //              std::cout << "MTL addr: " << mlt_addr << std::endl;
 //              void* new_raw_ptr = (void*)mlt_addr;
 
+              std::cout << "CPU->MLX data" << std::endl;
+              float32_t * c_ptr = reinterpret_cast<float32_t*>(data_ptr.get());
+              for(size_t i=0; i<4; i++) {
+                std::cout << (*c_ptr) << " At: " << c_ptr << std::endl;
+                c_ptr += 1;
+              }
+
+              for (uint64_t item : self.sizes()) {
+                std::cout << "Size: " << item << std::endl;
+              }
+
+              for (uint64_t item : self.strides()) {
+                std::cout << "Stride: " << item << std::endl;
+              }
+
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
               DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
               auto storage_impl = c10::make_intrusive<StorageImpl>(
@@ -408,6 +423,22 @@ Tensor _to_copy(
 //              ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{raw_ptr};
 //              std::cout << "raw_ptr2: " << (uint64_t)buf.raw_ptr() << std::endl;
 
+
+              std::cout << "MLX->CPU data" << std::endl;
+              float32_t * c_ptr = reinterpret_cast<float32_t*>(data_ptr.get());
+              for(size_t i=0; i<4; i++) {
+                std::cout << (*c_ptr) << " At: " << c_ptr << std::endl;
+                c_ptr += 1;
+              }
+
+              for (uint64_t item : self.sizes()) {
+                std::cout << "Size: " << item << std::endl;
+              }
+
+              for (uint64_t item : self.strides()) {
+                std::cout << "Stride: " << item << std::endl;
+              }
+
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
               DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
               auto storage_impl = c10::make_intrusive<StorageImpl>(
@@ -427,6 +458,11 @@ Tensor _to_copy(
             }
           }
 
+
+          std::cout << "Unknown copy" << std::endl;
+          for (uint64_t item : self.sizes()) {
+            std::cout << "Size: " << item << std::endl;
+          }
 
           r = at::empty_strided(
               self.sizes(), self.strides(), options.pinned_memory(pin_out));
