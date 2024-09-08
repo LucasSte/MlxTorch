@@ -376,26 +376,8 @@ Tensor _to_copy(
               auto size_bytes = self.storage().sym_nbytes();
 
               const at::DataPtr& data_ptr = self.storage().data_ptr();
-//              std::cout << "raw_ptr: " << (uint64_t)data_ptr.get() << std::endl;
-//              uint8_t* mtl_addr_ptr = (uint8_t*) data_ptr.get() - 8;
-//              uint64_t mlt_addr = *(uint64_t*)mtl_addr_ptr;
-//              std::cout << "MTL addr: " << mlt_addr << std::endl;
-//              void* new_raw_ptr = (void*)mlt_addr;
-
-              std::cout << "CPU->MLX data" << std::endl;
-              float32_t * c_ptr = reinterpret_cast<float32_t*>(data_ptr.get());
-              for(size_t i=0; i<4; i++) {
-                std::cout << (*c_ptr) << " At: " << c_ptr << std::endl;
-                c_ptr += 1;
-              }
-
-              for (uint64_t item : self.sizes()) {
-                std::cout << "Size: " << item << std::endl;
-              }
-
-              for (uint64_t item : self.strides()) {
-                std::cout << "Stride: " << item << std::endl;
-              }
+              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
+              ctr_ptr->rc.fetch_add(1);
 
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
               DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
@@ -418,26 +400,8 @@ Tensor _to_copy(
               auto size_bytes = self.storage().sym_nbytes();
               const at::DataPtr& data_ptr = self.storage().data_ptr();
 
-//              void *raw_ptr = data_ptr.get();
-//              std::cout << "MTL2 addr: " << (uint64_t)raw_ptr << std::endl;
-//              ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{raw_ptr};
-//              std::cout << "raw_ptr2: " << (uint64_t)buf.raw_ptr() << std::endl;
-
-
-              std::cout << "MLX->CPU data" << std::endl;
-              float32_t * c_ptr = reinterpret_cast<float32_t*>(data_ptr.get());
-              for(size_t i=0; i<4; i++) {
-                std::cout << (*c_ptr) << " At: " << c_ptr << std::endl;
-                c_ptr += 1;
-              }
-
-              for (uint64_t item : self.sizes()) {
-                std::cout << "Size: " << item << std::endl;
-              }
-
-              for (uint64_t item : self.strides()) {
-                std::cout << "Stride: " << item << std::endl;
-              }
+              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
+              ctr_ptr->rc.fetch_add(1);
 
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
               DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
@@ -456,12 +420,6 @@ Tensor _to_copy(
               std::cout << "Finished copy" << std::endl;
               return tensor;
             }
-          }
-
-
-          std::cout << "Unknown copy" << std::endl;
-          for (uint64_t item : self.sizes()) {
-            std::cout << "Size: " << item << std::endl;
           }
 
           r = at::empty_strided(

@@ -64,18 +64,9 @@ static ::mlx::core::array convert_to_mlx(const Tensor &self) {
 
   const at::DataPtr& data_ptr = self.storage().data_ptr();
 
-  float32_t * ptr = reinterpret_cast<float32_t*>(data_ptr.get());
-  std::cout << "Data: " << std::endl;
-  for(size_t i=0; i<4; i++) {
-    std::cout << (*ptr) << " At: " << ptr << std::endl;
-    ptr += 1;
-  }
+  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
 
-  uint8_t* mtl_addr_ptr = (uint8_t*) data_ptr.get() - 8;
-  uint64_t mlt_addr = *(uint64_t*)mtl_addr_ptr;
-  void* new_raw_ptr = (void*)mlt_addr;
-
-  ::mlx::core::allocator::Buffer buf = {new_raw_ptr};
+  ::mlx::core::allocator::Buffer buf = {ctr_ptr->mtl_ptr};
   ::mlx::core::Dtype mlx_type = convert_type(self);
 
   ::mlx::core::array self_mlx = ::mlx::core::array(
@@ -99,6 +90,8 @@ void mm_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
 
   auto data_ptr = result_mlx.data_shared_ptr();
   Allocator *allocator = at::mlx::getMLXAllocator();
+  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());
+  ctr_ptr->rc.fetch_add(1);
   DataPtr pytorch_ptr(data_ptr->buffer.raw_ptr(), data_ptr->buffer.raw_ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
 
   std::cout << "Calculated mamtul!" << std::endl;
@@ -107,16 +100,7 @@ void mm_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
   const at::DataPtr& test_ptr = result.storage().data_ptr();
 
   float32_t * ptr = reinterpret_cast<float32_t*>(test_ptr.get());
-  std::cout << "Result Data: " << std::endl;
-  // This is correct!
-  for(size_t i=0; i<4; i++) {
-    std::cout << (*ptr) << " At: " << ptr << std::endl;
-    ptr += 1;
-  }
-
-  // eq Tensor out is wrong I believe. Is it?
-  // Dispatch stub for MLX is not working.
-  // A copy to CPU to print the array isn't working.
+  // Dispatch stub for MLX is not working. (print(mlx_arr) -> after matmul)
 
 
   // Is this needed?

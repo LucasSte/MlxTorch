@@ -178,9 +178,8 @@ struct TORCH_API MLXCpuAllocator final : public c10::Allocator {
  private:
   static void Delete(void *ptr) {
     if (ptr) {
-      uint8_t * ctx = (uint8_t*)ptr - 8;
-      uint64_t original = *(uint64_t*)ctx;
-      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{(void*) original};
+      ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(ptr);
+      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ctr_ptr->mtl_ptr};
       ::mlx::core::allocator::free(buf);
     }
   }
