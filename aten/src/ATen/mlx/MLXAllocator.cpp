@@ -6,11 +6,8 @@ namespace at::mlx {
 
 void MLXAllocator::Delete(void* ptr) {
     if (ptr) {
-//      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ptr};
-//      ::mlx::core::allocator::free(buf);
-        uint8_t * ctx = (uint8_t*)ptr - 8;
-        uint64_t original = *(uint64_t*)ctx;
-        ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{(void*) original};
+        ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(ptr);
+        ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ctr_ptr->mtl_ptr};
         ::mlx::core::allocator::free(buf);
     }
 }
