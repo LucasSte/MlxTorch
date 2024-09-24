@@ -6,6 +6,7 @@ namespace at::mlx {
 
 void MLXAllocator::Delete(void* ptr) {
     if (ptr) {
+        std::cout << "Will mlx delete: " << ptr << std::endl;
         ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(ptr);
         ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ctr_ptr->mtl_ptr};
         ::mlx::core::allocator::free(buf);

@@ -1,6 +1,6 @@
 #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/native/DispatchStub.h>
-
+#include <iostream>
 #include <c10/core/DeviceType.h>
 #include <c10/util/Exception.h>
 
@@ -138,6 +138,7 @@ DispatchResult DispatchStubImpl::try_get_call_ptr(
   , void *SVE256
 #endif
 ) {
+  std::cout << "Getting PTR" << std::endl;
   constexpr auto supported_devices = c10::array_of<c10::DeviceType>(
         c10::DeviceType::CPU,
         c10::DeviceType::CUDA,

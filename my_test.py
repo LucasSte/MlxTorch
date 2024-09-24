@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 
+torch.set_num_threads(1)
+
 dev = torch.device("mlx")
 # np_arr = np.array([1, 2, 3, 4])
 np_arr = [[1, 2], [3, 4]]
@@ -12,7 +14,7 @@ arr2 = arr.to(dev)
 cpu_arr2 = [[5, 6], [7, 8]]
 arr3 = torch.tensor(cpu_arr2, dtype=torch.float32)
 arr6 = arr3.to(dev)
-arr4 = torch.matmul(arr2, arr3)
+arr4 = torch.matmul(arr2, arr6)
 
-arr5 = arr4.to(torch.device("cpu"))
-print(arr5)
+# arr5 = arr4.to(torch.device("cpu"))
+print(arr4)
