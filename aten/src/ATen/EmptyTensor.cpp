@@ -262,7 +262,7 @@ TensorBase empty_strided_symint_generic(
 
 TensorBase empty_cpu(IntArrayRef size, ScalarType dtype, bool pin_memory,
                      std::optional<c10::MemoryFormat> memory_format_opt) {
-  std::cout << "Calling empty cpu" << std::endl;
+  std::cout << "Calling empty cpu with type: " << (int)dtype  << std::endl;
   auto allocator = GetCPUAllocatorMaybePinned(pin_memory);
   constexpr c10::DispatchKeySet cpu_ks(c10::DispatchKey::CPU);
   return empty_generic(size, allocator, cpu_ks, dtype, memory_format_opt);
@@ -278,6 +278,7 @@ TensorBase empty_cpu(
   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(device_or_default(device_opt).type() == DeviceType::CPU);
   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(layout_or_default(layout_opt) == Layout::Strided);
 
+  std::cout << "Empty cpu with more options: " << dtype_opt.has_value() << std::endl;
   auto pin_memory = pinned_memory_or_default(pin_memory_opt);
   auto dtype = dtype_or_default(dtype_opt);
   return empty_cpu(size, dtype, pin_memory, memory_format_opt);

@@ -359,6 +359,7 @@
   dispatch:
     CPU, CUDA: abs_out
     MPS: abs_out_mps
+    MLX: abs_out_mlx
     SparseCPU, SparseCUDA: abs_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: abs_sparse_csr_out
   tags: pointwise
@@ -2702,6 +2703,7 @@
   dispatch:
     CPU, CUDA: fill_
     MPS: fill_scalar_mps
+    MLX: fill_scalar_mlx
     QuantizedCPU, QuantizedCUDA: fill_quantized_
     Meta: fill_meta_
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: fill_sparse_csr_
@@ -4249,6 +4251,7 @@
   dispatch:
     CPU, CUDA: mul_out
     MPS: mul_out_mps
+    MLX: mul_out_mlx
     SparseCPU: mul_out_sparse_cpu
     SparseCUDA: mul_out_sparse_cuda
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: mul_out_sparse_csr
@@ -8859,6 +8862,7 @@
   dispatch:
     CPU, CUDA: ne_Scalar_out
     MPS: ne_scalar_out_mps
+    MLX: ne_scalar_out_mlx
     QuantizedCPU: ne_out_quantized_cpu
   tags: pointwise
 
@@ -8877,6 +8881,7 @@
   dispatch:
     CPU, CUDA: ne_Tensor_out
     MPS: ne_tensor_out_mps
+    MLX: ne_tensor_out_mlx
     QuantizedCPU: ne_out_quantized_cpu
   tags: pointwise
 
@@ -8939,8 +8944,9 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA, MLX: eq_Tensor_out
+    CPU, CUDA: eq_Tensor_out
     MPS: eq_tensor_out_mps
+    MLX: eq_tensor_out_mlx
     QuantizedCPU: eq_out_quantized_cpu
   tags: pointwise
 

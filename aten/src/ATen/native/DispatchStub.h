@@ -7,6 +7,7 @@
 #include <atomic>
 #include <utility>
 #include <variant>
+#include <iostream>
 
 // Implements instruction set specific function dispatch.
 //
@@ -222,7 +223,8 @@ struct DispatchStub<rT (*)(Args...), T> {
   DispatchStub& operator=(const DispatchStub&) = delete;
 
 private:
-  FnPtr get_call_ptr(const c10::DeviceType device_type) {
+  FnPtr get_call_ptr(const c10::DeviceType device_type, std::string name = __builtin_FUNCTION()) {
+    std::cout << "Calling get call ptr: from " << name << std::endl;
     return reinterpret_cast<FnPtr>(
       impl.get_call_ptr(device_type
       , reinterpret_cast<void*>(DEFAULT)
@@ -274,7 +276,7 @@ public:
     impl.mps_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
   }
 
-    void set_mtia_dispatch_ptr(FnPtr fn_ptr) {
+  void set_mtia_dispatch_ptr(FnPtr fn_ptr) {
     impl.mtia_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
   }
 

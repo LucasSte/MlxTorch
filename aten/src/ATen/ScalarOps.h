@@ -30,7 +30,9 @@ namespace c10 {
 // of core).
 inline at::Tensor scalar_to_tensor(
     const Scalar& s,
-    const Device device = at::kCPU) {
+    const Device device = at::kCPU,
+    const std::string name = __builtin_FUNCTION()) {
+  std::cout << "Calling scalar to tensor: CALLER: " << name << std::endl;
   // This is the fast track we have for CPU scalar tensors.
   if (device == at::kCPU) {
     return at::detail::scalar_tensor_static(s, s.type(), at::kCPU);
@@ -44,7 +46,9 @@ namespace at::native {
 
 inline Tensor wrapped_scalar_tensor(
     const Scalar& scalar,
-    const Device device = at::kCPU) {
+    const Device device = at::kCPU,
+    const std::string name = __builtin_FUNCTION()) {
+  std::cout << "Wrapper caller: " << name << std::endl;
   auto tensor = scalar_to_tensor(scalar, device);
   tensor.unsafeGetTensorImpl()->set_wrapped_number(true);
   return tensor;
