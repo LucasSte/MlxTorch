@@ -9,6 +9,7 @@
 #else
 #include <ATen/ops/mm_native.h>
 #include <ATen/ops/mul_native.h>
+#include <ATen/ops/bitwise_and_native.h>
 #include <ATen/ops/stack.h>
 #include "c10/core/Allocator.h"
 #endif
@@ -22,8 +23,14 @@ TORCH_IMPL_FUNC(mm_out_mlx)(const Tensor & self, const Tensor & mat2, const Tens
   mm_out_mlx_impl(self, mat2, result);
 }
 
-TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& other, const Tensor& output) {
-  std::cout << "Calculating mul" << std::endl;
+TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {
+  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array result_mlx = ::mlx::core::multiply(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
+  result_mlx.eval();
+  std::cout << "Calculated mul!" << std::endl;
+
+  mlx::convert::set_tensor_result(result_mlx, output);
 }
 
 
@@ -60,6 +67,15 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& other, const Tens
 // 3. Check if any other cleanup function is necessary.
 }
 
-// Create eq tensor out mlx, abs and mul
+// TODO: Put the following in another file
+
+TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {
+  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array result_mlx = ::mlx::core::bitwise_and(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
+  result_mlx.eval();
+
+  mlx::convert::set_tensor_result(result_mlx, output);
+}
 
 }

@@ -8323,6 +8323,7 @@
   dispatch:
     CPU, CUDA: bitwise_and_out
     MPS: bitwise_and_out_mps
+    MLX: bitwise_and_out_mlx
   tags: pointwise
 
 - func: bitwise_and.Scalar_out(Tensor self, Scalar other, *, Tensor(a!) out) -> Tensor(a!)
