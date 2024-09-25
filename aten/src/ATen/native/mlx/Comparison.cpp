@@ -79,19 +79,21 @@ void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
 }
 
 Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
-  if (!output.is_same_size(self)) {
-    output.resize_(self.sizes());
-  }
-
   ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
 
   ::mlx::core::array result_mlx = ::mlx::core::abs(self_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
   mlx::convert::set_tensor_result(result_mlx, output);
-  auto sizes = output.sizes();
-  for (uint64_t item: sizes) {
-    std::cout << "Abs sizes: " << item << std::endl;
+
+  if (!output.is_same_size(self)) {
+    if (self.is_contiguous()) {
+      output.unsafeGetTensorImpl()->set_sizes_contiguous(self.sizes());
+    } else {
+      output.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides());
+    }
   }
+
+  auto sizes = output.sizes();
   return output;
 }
 
