@@ -86,6 +86,7 @@ Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
   mlx::convert::set_tensor_result(result_mlx, output);
 
   if (!output.is_same_size(self)) {
+    // TODO: Set storage size nbytes here!
     if (self.is_contiguous()) {
       output.unsafeGetTensorImpl()->set_sizes_contiguous(self.sizes());
     } else {
