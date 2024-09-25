@@ -1847,7 +1847,7 @@
   dispatch:
     CPU: count_nonzero_cpu
     CUDA: count_nonzero_cuda
-    MPS: count_nonzero_mps
+    MPS, MLX: count_nonzero_mps
   autogen: count_nonzero.dim_IntList_out
 
 - func: count_nonzero(Tensor self, int? dim=None) -> Tensor
@@ -3076,7 +3076,7 @@
   precomputed:
   - indices -> DimVector sizes, DimVector strides
   dispatch:
-    CPU, CUDA, MPS: index_out
+    CPU, CUDA, MPS, MLX: index_out
 
 # Used by inductor to signal indexing without bounds checks
 # Note that we don't support boolean indexing, to avoid dynamic output shapes
@@ -9270,7 +9270,7 @@
   dispatch:
     CPU: masked_select_cpu
     CUDA: masked_select_cuda
-    MPS: masked_select_mps
+    MPS, MLX: masked_select_mps
   tags: dynamic_output_shape
 
 - func: masked_select_backward(Tensor grad, Tensor input, Tensor mask) -> Tensor
@@ -9290,7 +9290,7 @@
   dispatch:
     CPU: nonzero_cpu
     CUDA: nonzero_cuda
-    MPS: nonzero_mps
+    MPS, MLX: nonzero_mps
   tags: [dynamic_output_shape, core]
 
 - func: nonzero_static.out(Tensor self, *, int size, int fill_value=-1, Tensor(a!) out) -> Tensor(a!)

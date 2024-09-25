@@ -503,7 +503,7 @@ Placeholder::Placeholder(MPSGraphTensor* mpsGraphTensor,
                          MPSDataType dataType,
                          bool useMPSStridedAPI)
     : _tensor(src) {
-  TORCH_CHECK(src.is_mps(), "Placeholder storage has not been allocated on MPS device!");
+  //TORCH_CHECK(src.is_mps(), "Placeholder storage has not been allocated on MPS device!");
   // extract the pointer to MTLBuffer from the Tensor's storage
   id<MTLBuffer> srcBuf = getMTLBufferStorage(src);
 
