@@ -57,15 +57,9 @@ void eq_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
   ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
 
   auto sizes = self.sizes();
-  for (uint64_t item: sizes) {
-    std::cout << "Eq input sizes: " << item << std::endl;
-  }
   ::mlx::core::array result_mlx = ::mlx::core::equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
   auto out_sizes = result.sizes();
-  for (uint64_t item: sizes) {
-    std::cout << "Eq result sizes: " << item << std::endl;
-  }
   mlx::convert::set_tensor_result(result_mlx, result);
 }
 
