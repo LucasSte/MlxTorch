@@ -1458,7 +1458,7 @@
   structured_inherits: TensorIteratorBase
   dispatch:
     CPU, CUDA: ceil_out
-    MPS: ceil_out_mps
+    MPS, MLX: ceil_out_mps
     SparseCPU, SparseCUDA: ceil_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: ceil_sparse_csr_out
   tags: pointwise
@@ -2465,7 +2465,7 @@
     Meta: resize__symint
     CPU: resize_
     CUDA: resize_cuda_
-    MPS: resize_mps_
+    MPS, MLX: resize_mps_
     QuantizedCPU: quantized_resize_cpu_
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: resize_sparse_csr_
   autogen: resize, resize.out
@@ -9971,7 +9971,7 @@
   variants: method, function
   dispatch:
     CPU, CUDA: min
-    MPS: min_mps
+    MPS, MLX: min_mps
     QuantizedCPU: min_quantized_cpu
 
 - func: min.unary_out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
@@ -9999,7 +9999,7 @@
   variants: method, function
   dispatch:
     CPU, CUDA: max
-    MPS: max_mps
+    MPS, MLX: max_mps
     QuantizedCPU: max_quantized_cpu
 
 - func: fmax(Tensor self, Tensor other) -> Tensor

@@ -508,6 +508,12 @@ class TORCH_API TensorBase {
     return impl_->is_mps();
   }
 
+  /// Returns if a `Tensor` is mlx tensor.
+  bool is_mlx() const {
+    // NB: this is not a native function to avoid dispatching overhead.
+    return impl_->is_mlx();
+  }
+
   /// Returns if a `Tensor` is maia tensor.
   bool is_maia() const {
     // NB: this is not a native function to avoid dispatching overhead.

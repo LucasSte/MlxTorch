@@ -1214,6 +1214,13 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
     return device_opt_.has_value() && device_opt_->type() == kMPS;
   }
 
+  bool is_mlx() const {
+    if (C10_UNLIKELY(device_policy_)) {
+      return device_custom().is_mlx();
+    }
+    return device_opt_.has_value() && device_opt_->type() == kMLX;
+  }
+
   bool is_maia() const {
     if (C10_UNLIKELY(device_policy_)) {
       return device_custom().is_maia();

@@ -192,7 +192,7 @@ DispatchResult DispatchStubImpl::try_get_call_ptr(
       return hip_dispatch_ptr != nullptr ? DispatchResult(hip_dispatch_ptr) : ErrorType::MissingDeviceKernel;
 
     case DeviceType::MLX:
-      return mlx_dispatch_ptr != nullptr ? DispatchResult(mlx_dispatch_ptr) : ErrorType::MissingDeviceKernel;
+      return mps_dispatch_ptr != nullptr ? DispatchResult(mps_dispatch_ptr) : ErrorType::MissingDeviceKernel;
 
 #if defined(USE_MPS)
     case DeviceType::MPS:
