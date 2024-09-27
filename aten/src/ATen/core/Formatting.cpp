@@ -276,7 +276,7 @@ std::ostream& print(std::ostream& stream, const Tensor & tensor_, int64_t linesi
     } else if (tensor_.is_mkldnn()) {
       stream << "MKLDNN Tensor: ";
       tensor = tensor_.to_dense().to(kCPU, kDouble).contiguous();
-    } else if (tensor_.is_mps()) {
+    } else if (tensor_.is_mps() || tensor_.is_mlx()) {
       // MPS does not support double tensors, so first copy then convert
       tensor = tensor_.to(kCPU).to(kDouble).contiguous();
     } else {
