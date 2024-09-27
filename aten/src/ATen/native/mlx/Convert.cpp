@@ -70,7 +70,7 @@ void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & ten
   Allocator *allocator = at::mlx::getMLXAllocator();
   ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::from_buffer(data_ptr->buffer);
   ctr_ptr->rc.fetch_add(1);
-  std::cout << "Result ptr: " << data_ptr->buffer.raw_ptr() << " caller: " << name << std::endl;
+  // std::cout << "Result ptr: " << data_ptr->buffer.raw_ptr() << " caller: " << name << std::endl;
   DataPtr pytorch_ptr(data_ptr->buffer.ptr(), data_ptr->buffer.ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
 
   auto old_ptr = tensor_result.storage().set_data_ptr(std::move(pytorch_ptr));

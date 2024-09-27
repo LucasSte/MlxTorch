@@ -144,6 +144,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 namespace at::native {
 

@@ -178,7 +178,7 @@ struct TORCH_API MLXCpuAllocator final : public c10::Allocator {
  private:
   static void Delete(void *ptr) {
     if (ptr) {
-      std::cout << "Will cpu delete: " << ptr << std::endl;
+//      std::cout << "Will cpu delete: " << ptr << std::endl;
 //      ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(ptr);
 //      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ctr_ptr->mtl_ptr};
 //      ::mlx::core::allocator::free(buf);

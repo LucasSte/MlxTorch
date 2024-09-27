@@ -39,6 +39,9 @@
 #include <ATen/ops/var_native.h>
 #endif
 
+#include <mlx/allocator.h>
+#include <iostream>
+
 namespace at::native {
 namespace mps {
 typedef MPSGraphTensor* (^NormOpBlock)(MPSBinaryCachedGraph*, MPSGraphTensor*, MPSGraphTensor*);

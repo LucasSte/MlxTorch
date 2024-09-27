@@ -360,13 +360,12 @@ Tensor _to_copy(
           set_quantizer_(r, quantizer);
         } else {
 
-          std::cout << "Calling empty_strided" << std::endl;
-          std::cout << "From dev: " << (int)self.device().type() << std::endl;
-          if (device) {
-            std::cout << "To dev: " << (int)device->type() << std::endl;
-          } else {
-            std::cout << "No device specified" << std::endl;
-          }
+//          std::cout << "From dev: " << (int)self.device().type() << std::endl;
+//          if (device) {
+//            std::cout << "To dev: " << (int)device->type() << std::endl;
+//          } else {
+//            std::cout << "No device specified" << std::endl;
+//          }
 
           if (device) {
             // TODO: This could go in a separate function
@@ -392,7 +391,7 @@ Tensor _to_copy(
               auto tensor = at::detail::make_tensor_base<TensorImpl>(
                   std::move(storage_impl), mlx_dks, mlx_dtype
                   );
-              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides());
+              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
               return tensor;
             } else if(self.device().type() == at::DeviceType::MLX && device->type() == at::DeviceType::CPU) {
               std::cout << "I am passing from mlx to cpu" << std::endl;
@@ -417,7 +416,7 @@ Tensor _to_copy(
               auto tensor = at::detail::make_tensor_base<TensorImpl>(
                   std::move(storage_impl), cpu_dks, mlx_dtype
               );
-              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides());
+              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
               std::cout << "Finished copy" << std::endl;
               return tensor;
             }

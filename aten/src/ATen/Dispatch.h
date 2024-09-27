@@ -197,7 +197,6 @@ inline at::ScalarType scalar_type(at::ScalarType s) {
     constexpr const char* at_dispatch_name = NAME;                          \
     /* don't use TYPE again in case it is an expensive or side-effect op */ \
     at::ScalarType _st = ::detail::scalar_type(the_type);                   \
-    std::cout << "Dispatch name: " << at_dispatch_name << std::endl;         \
     RECORD_KERNEL_FUNCTION_DTYPE(at_dispatch_name, _st);                    \
     switch (_st) {                                                          \
       __VA_ARGS__                                                           \

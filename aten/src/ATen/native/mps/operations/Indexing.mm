@@ -42,6 +42,8 @@
 #include <ATen/ops/view_as_real.h>
 #endif
 
+#include <mlx/allocator.h>
+
 constexpr auto nonZeroMaxSize = 1UL << 24;
 
 namespace at::native {
@@ -182,7 +184,6 @@ static bool dispatchIndexKernel(TensorIteratorBase& iter,
       getMPSProfiler().endProfileKernel(indexSelectPSO);
     }
   });
-
   return true;
 }
 
@@ -236,6 +237,7 @@ static Tensor& masked_select_out_mps_impl(Tensor& result, const Tensor& self, co
 }
 
 static void index_kernel_mps(TensorIteratorBase& iter, IntArrayRef index_size, IntArrayRef index_stride) {
+  std::cout << "Dispatching kernel index" << std::endl;
   @autoreleasepool {
     validateInputData(iter, index_size, index_stride, "index.Tensor_out", /*accumulate=*/false);
     dispatchIndexKernel(iter, index_size, index_stride, /*index_select=*/true, /*accumulate=*/false);
