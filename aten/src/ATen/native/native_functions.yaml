@@ -1458,7 +1458,7 @@
   structured_inherits: TensorIteratorBase
   dispatch:
     CPU, CUDA: ceil_out
-    MPS, MLX: ceil_out_mps
+    MPS: ceil_out_mps
     SparseCPU, SparseCUDA: ceil_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: ceil_sparse_csr_out
   tags: pointwise
@@ -1847,7 +1847,7 @@
   dispatch:
     CPU: count_nonzero_cpu
     CUDA: count_nonzero_cuda
-    MPS, MLX: count_nonzero_mps
+    MPS: count_nonzero_mps
   autogen: count_nonzero.dim_IntList_out
 
 - func: count_nonzero(Tensor self, int? dim=None) -> Tensor
@@ -2465,7 +2465,7 @@
     Meta: resize__symint
     CPU: resize_
     CUDA: resize_cuda_
-    MPS, MLX: resize_mps_
+    MPS: resize_mps_
     QuantizedCPU: quantized_resize_cpu_
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: resize_sparse_csr_
   autogen: resize, resize.out
@@ -3076,7 +3076,7 @@
   precomputed:
   - indices -> DimVector sizes, DimVector strides
   dispatch:
-    CPU, CUDA, MPS, MLX: index_out
+    CPU, CUDA, MPS: index_out
 
 # Used by inductor to signal indexing without bounds checks
 # Note that we don't support boolean indexing, to avoid dynamic output shapes
@@ -8091,7 +8091,7 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    ZeroTensor, Meta, CPU, CUDA, QuantizedCPU, QuantizedCUDA, MPS, MLX: view
+    ZeroTensor, Meta, CPU, CUDA, QuantizedCPU, QuantizedCUDA, MPS: view
     MkldnnCPU: mkldnn_view
     NestedTensorCPU, NestedTensorCUDA: view_nested
   tags: core
@@ -9270,7 +9270,7 @@
   dispatch:
     CPU: masked_select_cpu
     CUDA: masked_select_cuda
-    MPS, MLX: masked_select_mps
+    MPS: masked_select_mps
   tags: dynamic_output_shape
 
 - func: masked_select_backward(Tensor grad, Tensor input, Tensor mask) -> Tensor
@@ -9290,7 +9290,7 @@
   dispatch:
     CPU: nonzero_cpu
     CUDA: nonzero_cuda
-    MPS, MLX: nonzero_mps
+    MPS: nonzero_mps
   tags: [dynamic_output_shape, core]
 
 - func: nonzero_static.out(Tensor self, *, int size, int fill_value=-1, Tensor(a!) out) -> Tensor(a!)
@@ -9971,7 +9971,7 @@
   variants: method, function
   dispatch:
     CPU, CUDA: min
-    MPS, MLX: min_mps
+    MPS: min_mps
     QuantizedCPU: min_quantized_cpu
 
 - func: min.unary_out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
@@ -9999,7 +9999,7 @@
   variants: method, function
   dispatch:
     CPU, CUDA: max
-    MPS, MLX: max_mps
+    MPS: max_mps
     QuantizedCPU: max_quantized_cpu
 
 - func: fmax(Tensor self, Tensor other) -> Tensor
