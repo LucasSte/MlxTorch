@@ -2279,7 +2279,6 @@ Tensor select_symint(const Tensor& self, int64_t dim, c10::SymInt index) {
     sizes.erase(sizes.begin() + dim);
     strides.erase(strides.begin() + dim);
 
-    std::cout << "Calling as strided" << std::endl;
     result = self.as_strided_symint(sizes, strides, storage_offset);
   }
   namedinference::propagate_names_except(result, self, {dim});

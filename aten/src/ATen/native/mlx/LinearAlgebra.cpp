@@ -28,7 +28,6 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
   ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
   ::mlx::core::array result_mlx = ::mlx::core::multiply(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
-  std::cout << "Calculated mul!" << std::endl;
 
   mlx::convert::set_tensor_result(result_mlx, output);
 }
@@ -37,7 +36,6 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
     void mm_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
   // Ensure both tensors are in MLX or CPU!
 
-  std::cout << "Calculating matmul!" << std::endl;
   ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
   ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
 
@@ -62,12 +60,10 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
 //
 
 
-// 1. Fix the mess I created with memory management
-// 2. Organize files and remove prints
 // 3. Make sure the minimal example is working (If I use MPS operations, they need syncing, otherwise, only evaluate when copying to cpu).
 // 5. If it works, modify pytorch to not allocate a tensor beforehand for MLX. (register_dispatch_key.py -> create_out)
 // 6. Only evaluate when needed. If I use MPS operations (try to avoid them), evaluate MLX and sync MPS.
-// 7. Understand how much work is needed to benchmark things (only do it if it is going to be fast)
+// 7. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
 // 8. Release
 }
 

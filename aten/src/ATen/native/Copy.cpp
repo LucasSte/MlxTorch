@@ -354,7 +354,7 @@ Tensor copy(const Tensor& self, const Tensor& src, bool non_blocking) {
 }
 
 Tensor& copy_(Tensor& self, const Tensor& src, bool non_blocking) {
-  std::cout << "Called copy_ 2" << std::endl;
+  // std::cout << "Called copy_ 2" << std::endl;
   auto maybe_outnames = namedinference::compute_broadcast_outnames(self, src);
   {
     NoNamesGuard guard;

@@ -163,7 +163,6 @@ struct TORCH_API MLXCpuAllocator final : public c10::Allocator {
  public:
   DataPtr allocate(size_t n) override {
     // NOTE: I modified mlx to allocate n+8, and return ptr+8 for the raw ptr
-    std::cout << "Allocating on MLX CPU" << std::endl;
     ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::malloc_or_wait(n);
     return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXCpuAllocator::Delete, at::Device(at::DeviceType::CPU)};
   }
@@ -178,10 +177,9 @@ struct TORCH_API MLXCpuAllocator final : public c10::Allocator {
  private:
   static void Delete(void *ptr) {
     if (ptr) {
-//      std::cout << "Will cpu delete: " << ptr << std::endl;
-//      ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(ptr);
-//      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ctr_ptr->mtl_ptr};
-//      ::mlx::core::allocator::free(buf);
+      ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(ptr);
+      ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::Buffer{ctr_ptr->mtl_ptr};
+      ::mlx::core::allocator::free(buf);
     }
   }
 };

@@ -48,9 +48,9 @@ namespace at::native::mlx::convert {
 
   const at::DataPtr& data_ptr = self.storage().data_ptr();
 
-  ::mlx::core::allocator::Buffer buf = {data_ptr.get()};
-  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::from_buffer(buf);
+  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
   ctr_ptr->rc.fetch_add(1);
+  ::mlx::core::allocator::Buffer buf = {ctr_ptr->mtl_ptr};
 
   ::mlx::core::Dtype mlx_type = convert_type(self);
 
@@ -68,10 +68,10 @@ void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & ten
                        const std::string name) {
   auto data_ptr = mlx_result.data_shared_ptr();
   Allocator *allocator = at::mlx::getMLXAllocator();
-  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::from_buffer(data_ptr->buffer);
+  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());
   ctr_ptr->rc.fetch_add(1);
   // std::cout << "Result ptr: " << data_ptr->buffer.raw_ptr() << " caller: " << name << std::endl;
-  DataPtr pytorch_ptr(data_ptr->buffer.ptr(), data_ptr->buffer.ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
+  DataPtr pytorch_ptr(data_ptr->buffer.raw_ptr(), data_ptr->buffer.raw_ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
 
   auto old_ptr = tensor_result.storage().set_data_ptr(std::move(pytorch_ptr));
 }

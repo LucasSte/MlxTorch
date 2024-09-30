@@ -375,11 +375,11 @@ Tensor _to_copy(
               auto size_bytes = self.storage().sym_nbytes();
 
               const at::DataPtr& data_ptr = self.storage().data_ptr();
-              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::from_raw_ptr(data_ptr.get(), self.storage().nbytes());
+              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
               ctr_ptr->rc.fetch_add(1);
 
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
-              DataPtr mlx_ptr(ctr_ptr->mtl_ptr, ctr_ptr->mtl_ptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
+              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
               auto storage_impl = c10::make_intrusive<StorageImpl>(
                   c10::StorageImpl::use_byte_size_t(),
                   size_bytes,
@@ -399,12 +399,11 @@ Tensor _to_copy(
               auto size_bytes = self.storage().sym_nbytes();
               const at::DataPtr& data_ptr = self.storage().data_ptr();
 
-              ::mlx::core::allocator::Buffer buf = {data_ptr.get()};
-              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::from_buffer(buf);
+              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
               ctr_ptr->rc.fetch_add(1);
 
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
-              DataPtr mlx_ptr(buf.raw_ptr(), buf.raw_ptr(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
+              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
               auto storage_impl = c10::make_intrusive<StorageImpl>(
                   c10::StorageImpl::use_byte_size_t(),
                   size_bytes,
@@ -417,7 +416,6 @@ Tensor _to_copy(
                   std::move(storage_impl), cpu_dks, mlx_dtype
               );
               tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
-              std::cout << "Finished copy" << std::endl;
               return tensor;
             }
           }

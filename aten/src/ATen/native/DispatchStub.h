@@ -224,7 +224,6 @@ struct DispatchStub<rT (*)(Args...), T> {
 
 private:
   FnPtr get_call_ptr(const c10::DeviceType device_type, std::string name = __builtin_FUNCTION()) {
-    std::cout << "Calling get call ptr: from " << name << std::endl;
     return reinterpret_cast<FnPtr>(
       impl.get_call_ptr(device_type
       , reinterpret_cast<void*>(DEFAULT)
