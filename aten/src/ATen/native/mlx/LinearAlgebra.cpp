@@ -11,6 +11,7 @@
 #include <ATen/ops/mul_native.h>
 #include <ATen/ops/bitwise_and_native.h>
 #include <ATen/ops/stack.h>
+#include <ATen/ops/addmm_native.h>
 #include "c10/core/Allocator.h"
 #endif
 #include <ATen/native/DispatchStub.h>
@@ -67,6 +68,23 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
 // 8. Release
 }
 
+TORCH_IMPL_FUNC(addmm_out_mlx)
+(const Tensor& self,
+ const Tensor& mat1,
+ const Tensor& mat2,
+ const Scalar& beta,
+ const Scalar& alpha,
+ const Tensor& result) {
+ ::mlx::core::array bias = mlx::convert::tensor_to_mlx(self);
+ ::mlx::core::array input = mlx::convert::tensor_to_mlx(mat1);
+ ::mlx::core::array weight = mlx::convert::tensor_to_mlx(mat2);
+
+ float fbeta = beta.toDouble();
+ float falpha = alpha.toDouble();
+ ::mlx::core::array result_mlx = ::mlx::core::addmm(bias, input, weight, falpha, fbeta, ::mlx::core::Device::gpu);
+ result_mlx.eval();
+ mlx::convert::set_tensor_result(result_mlx, const_cast<Tensor&>(result));
+}
 // TODO: Put the following in another file
 
 TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {

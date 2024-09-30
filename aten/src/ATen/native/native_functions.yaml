@@ -7040,6 +7040,7 @@
     CUDA: addmm_out_cuda
     MPS: addmm_out_mps
     XPU: addmm_out_xpu
+    MLX: addmm_out_mlx
     SparseCPU: addmm_out_sparse_dense_cpu
     SparseCUDA: addmm_out_sparse_dense_cuda
     SparseCsrCPU: addmm_out_sparse_compressed_cpu
