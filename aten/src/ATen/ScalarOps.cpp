@@ -26,7 +26,6 @@ Tensor& scalar_fill(Tensor& self, const Scalar& value) {
 Tensor scalar_tensor_static(const Scalar& s, std::optional<ScalarType> dtype_opt, std::optional<Device> device_opt) {
   at::tracer::impl::NoTracerDispatchMode tracer_guard;
   at::AutoDispatchBelowAutograd mode;
-  std::cout << "At tensor static scalar" << std::endl;
   Tensor result = at::detail::empty_cpu(
       {}, dtype_opt, std::nullopt, device_opt, std::nullopt, std::nullopt);
   scalar_fill(result, s);

@@ -138,7 +138,6 @@ DispatchResult DispatchStubImpl::try_get_call_ptr(
   , void *SVE256
 #endif
 ) {
-  std::cout << "Getting PTR" << std::endl;
   constexpr auto supported_devices = c10::array_of<c10::DeviceType>(
         c10::DeviceType::CPU,
         c10::DeviceType::CUDA,
@@ -192,7 +191,7 @@ DispatchResult DispatchStubImpl::try_get_call_ptr(
       return hip_dispatch_ptr != nullptr ? DispatchResult(hip_dispatch_ptr) : ErrorType::MissingDeviceKernel;
 
     case DeviceType::MLX:
-      return mps_dispatch_ptr != nullptr ? DispatchResult(mps_dispatch_ptr) : ErrorType::MissingDeviceKernel;
+      return mlx_dispatch_ptr != nullptr ? DispatchResult(mlx_dispatch_ptr) : ErrorType::MissingDeviceKernel;
 
 #if defined(USE_MPS)
     case DeviceType::MPS:

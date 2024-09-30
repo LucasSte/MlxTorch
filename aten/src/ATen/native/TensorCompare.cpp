@@ -459,22 +459,16 @@ Tensor isinf(const Tensor& self) {
 }
 
 Tensor isfinite(const Tensor& self) {
-  std::cout << "Calling is finite" << std::endl;
   // Note: Integral tensor values are always finite
   if (c10::isIntegralType(self.scalar_type(), /*includeBool=*/true)) {
-    std::cout << "Case1" << std::endl;
     return at::ones_like(self, at::kBool, at::MemoryFormat::Preserve);
   }
 
   // Note: a complex value is finite iff both parts are finite
   if (self.is_complex()) {
-    std::cout << "Case2" << std::endl;
     return at::isfinite(at::real(self)).__iand__(at::isfinite(at::imag(self)));
   }
 
-  std::cout << "Case3" << std::endl;
-  std::cout << "My scalar type is: " << (int)self.scalar_type() << std::endl;
-  std::cout << "My ptr is: " << self.storage().data_ptr().get() << std::endl;
   return _AT_DISPATCH_INF_TYPES(self.scalar_type(), "isfinite", [&]() {
     return (self == self) *
         (self.abs() != std::numeric_limits<scalar_t>::infinity());
