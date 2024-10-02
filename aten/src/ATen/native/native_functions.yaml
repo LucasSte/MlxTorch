@@ -5045,6 +5045,7 @@
   dispatch:
     CPU, CUDA: relu
     MPS: relu_mps
+    MLX: relu_mlx
     MkldnnCPU: mkldnn_relu
     QuantizedCPU: relu_quantized_cpu
     QuantizedCUDA: relu_quantized_cuda
@@ -5325,6 +5326,7 @@
   dispatch:
     CPU, CUDA: sigmoid_out
     MPS: sigmoid_out_mps
+    MLX: sigmoid_out_mlx
   tags: pointwise
 
 - func: logit(Tensor self, float? eps=None) -> Tensor
