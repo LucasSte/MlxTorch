@@ -7,16 +7,18 @@
 #include <ATen/Functions.h>
 #include <ATen/NativeFunctions.h>
 #else
+#include <ATen/ops/addmm_native.h>
+#include <ATen/ops/bitwise_and_native.h>
 #include <ATen/ops/mm_native.h>
 #include <ATen/ops/mul_native.h>
-#include <ATen/ops/bitwise_and_native.h>
+#include <ATen/ops/sigmoid_native.h>
 #include <ATen/ops/stack.h>
-#include <ATen/ops/addmm_native.h>
-#include "c10/core/Allocator.h"
 #endif
 #include <ATen/native/DispatchStub.h>
 #include "ATen/native/IndexKernel.h"
 #include <ATen/native/mlx/Convert.h>
+#include "c10/core/Allocator.h"
+
 
 namespace at::native {
 
@@ -91,6 +93,14 @@ TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, con
   ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
   ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
   ::mlx::core::array result_mlx = ::mlx::core::bitwise_and(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
+  result_mlx.eval();
+
+  mlx::convert::set_tensor_result(result_mlx, output);
+}
+
+TORCH_IMPL_FUNC(sigmoid_out_mlx)(const Tensor& self, const Tensor& output) {
+  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array result_mlx = ::mlx::core::sigmoid(self_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
   mlx::convert::set_tensor_result(result_mlx, output);
