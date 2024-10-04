@@ -370,7 +370,7 @@ Tensor _to_copy(
           if (device) {
             // TODO: This could go in a separate function
             if (self.device().type() == at::DeviceType::CPU && device->type() == at::DeviceType::MLX) {
-              std::cout << "I am passing from cpu to mlx" << std::endl;
+              // std::cout << "I am passing from cpu to mlx" << std::endl;
               caffe2::TypeMeta mlx_dtype = self.dtype();
               auto size_bytes = self.storage().sym_nbytes();
 
@@ -394,7 +394,7 @@ Tensor _to_copy(
               tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
               return tensor;
             } else if(self.device().type() == at::DeviceType::MLX && device->type() == at::DeviceType::CPU) {
-              std::cout << "I am passing from mlx to cpu" << std::endl;
+              // std::cout << "I am passing from mlx to cpu" << std::endl;
               caffe2::TypeMeta mlx_dtype = self.dtype();
               auto size_bytes = self.storage().sym_nbytes();
               const at::DataPtr& data_ptr = self.storage().data_ptr();
