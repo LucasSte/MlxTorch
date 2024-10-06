@@ -1151,6 +1151,7 @@
     CPU: binary_cross_entropy_cpu
     CUDA: binary_cross_entropy_cuda
     MPS: binary_cross_entropy_mps
+    MLX: binary_cross_entropy_mlx
 
 - func: binary_cross_entropy.out(Tensor self, Tensor target, Tensor? weight=None, int reduction=Mean, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
