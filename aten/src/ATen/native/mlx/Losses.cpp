@@ -1,6 +1,7 @@
 #include <ATen/native/mlx/Losses.h>
 #include <ATen/native/mlx/Convert.h>
 #include <ATen/core/Reduction.h>
+#include <ATen/core/TensorBase.h>
 #include <mlx/array.h>
 #include <mlx/ops.h>
 
@@ -9,6 +10,12 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
                                 const Tensor& target,
                                 const std::optional<Tensor>& weight_opt,
                                 int64_t reduction) {
+  // TODO: Is this necessary?
+//  Tensor input_squeezed = input.squeeze();
+//  Tensor target_squeezed = target.squeeze();
+  c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
+  const Tensor &weight = *weight_maybe_owned;
+
   ::mlx::core::array mlx_input = mlx::convert::tensor_to_mlx(input);
   ::mlx::core::array mlx_targets = mlx::convert::tensor_to_mlx(target);
 
@@ -25,8 +32,8 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
   ::mlx::core::array not_loss = ::mlx::core::add(lhs, rhs, ::mlx::core::Device::gpu);
   ::mlx::core::array loss = ::mlx::core::negative(not_loss, ::mlx::core::Device::gpu);
 
-  if (weight_opt) {
-    ::mlx::core::array weights = mlx::convert::tensor_to_mlx(*weight_opt);
+  if (weight.defined()) {
+    ::mlx::core::array weights = mlx::convert::tensor_to_mlx(weight);
     loss = ::mlx::core::multiply(loss, weights, ::mlx::core::Device::gpu);
   }
 
@@ -49,4 +56,52 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
       TORCH_INTERNAL_ASSERT(false, "Invalid case!");
   }
 }
+
+Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
+                                         const Tensor& input,
+                                         const Tensor& target,
+                                         const std::optional<Tensor>& weight_opt,
+                                         int64_t reduction) {
+  // TODO: Is this necessary?
+//  Tensor input_squeezed = input.squeeze();
+//  Tensor target_squeezed = target.squeeze();
+  c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
+  const Tensor &weight = *weight_maybe_owned;
+
+  // d(L)/d(y) = -w (x - y) / (y - y^2)
+  ::mlx::core::array input_mlx = mlx::convert::tensor_to_mlx(input);
+  ::mlx::core::array target_mlx = mlx::convert::tensor_to_mlx(target);
+  ::mlx::core::array grad_mlx = mlx::convert::tensor_to_mlx(grad_output);
+
+  ::mlx::core::array epsilon = ::mlx::core::array(1e-12);
+  // 1 - y
+  ::mlx::core::array one_input = ::mlx::core::subtract(::mlx::core::array(1.0), input_mlx, ::mlx::core::Device::gpu);
+  // y * (y - 1)
+  ::mlx::core::array input_times = ::mlx::core::multiply(input_mlx, one_input, ::mlx::core::Device::gpu);
+  // max(y * (1 - y), epsilon)
+  ::mlx::core::array gradDenominator = ::mlx::core::maximum(input_times, epsilon, ::mlx::core::Device::gpu);
+  // x - y
+  ::mlx::core::array input_target = ::mlx::core::subtract(input_mlx, target_mlx, ::mlx::core::Device::gpu);
+  // (x - y) / max(y * (1 - y), epsilon)
+  ::mlx::core::array division = ::mlx::core::divide(input_target, gradDenominator, ::mlx::core::Device::gpu);
+  // w * ((x - y) / max (y * (1 - y), epsilon))
+  ::mlx::core::array bce_loss = ::mlx::core::multiply(grad_mlx, division, ::mlx::core::Device::gpu);
+
+  if (weight.defined()) {
+    std::cout << "Calling backward4" << std::endl;
+    ::mlx::core::array weight_mlx = mlx::convert::tensor_to_mlx(weight);
+    std::cout << "Calling backward5" << std::endl;
+    bce_loss = ::mlx::core::multiply(bce_loss, weight_mlx, ::mlx::core::Device::gpu);
+  }
+
+  if (reduction == at::Reduction::Mean) {
+    ::mlx::core::array numel = ::mlx::core::array(static_cast<float>(input.numel()));
+    bce_loss = ::mlx::core::divide(bce_loss, numel, ::mlx::core::Device::gpu);
+  }
+
+  bce_loss.eval();
+
+  return mlx::convert::new_from_mlx(bce_loss);
+}
+
 }

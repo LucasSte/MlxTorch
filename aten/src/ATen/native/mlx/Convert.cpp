@@ -91,12 +91,14 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
 
   ::mlx::core::Dtype mlx_type = convert_type(self);
 
+  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) + self.dtype().itemsize();
   ::mlx::core::array self_mlx = ::mlx::core::array(
       std::move(buf),
       std::move(mlx_shape),
       mlx_type,
       ::mlx::core::allocator::free
   );
+  self_mlx.set_storage_offset(bytes_offset);
 
   return self_mlx;
 }
@@ -111,6 +113,12 @@ void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & ten
   DataPtr pytorch_ptr(data_ptr->buffer.raw_ptr(), data_ptr->buffer.raw_ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
 
   auto old_ptr = tensor_result.storage().set_data_ptr(std::move(pytorch_ptr));
+  size_t bytes_offset = mlx_result.storage_offset();
+  size_t original_offset = static_cast<size_t>(tensor_result.storage_offset()) * tensor_result.dtype().itemsize();
+  if (bytes_offset > 0 && bytes_offset != original_offset) {
+    int64_t offset = static_cast<int64_t>(bytes_offset / tensor_result.dtype().itemsize());
+    tensor_result.unsafeGetTensorImpl()->set_storage_offset(offset);
+  }
 }
 
 Tensor new_from_mlx(const ::mlx::core::array & input) {
@@ -151,7 +159,14 @@ Tensor new_from_mlx(const ::mlx::core::array & input) {
     ref2[i] = static_cast<int64_t>(mlx_strides[i]);
   }
   auto strides_ref = ArrayRef(ref2);
-  tensor.unsafeGetTensorImpl()->set_sizes_and_strides(shape_ref, strides_ref);
+
+  size_t bytes_offset = input.storage_offset();
+  std::optional<int64_t> tensor_offset = std::nullopt;
+  if (size_bytes > 0) {
+    tensor_offset = static_cast<int64_t>(size_bytes / tensor.dtype().itemsize());
+  }
+
+  tensor.unsafeGetTensorImpl()->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
   return tensor;
 }
 
