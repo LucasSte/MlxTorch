@@ -98,12 +98,4 @@ TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, con
   mlx::convert::set_tensor_result(result_mlx, output);
 }
 
-TORCH_IMPL_FUNC(sigmoid_out_mlx)(const Tensor& self, const Tensor& output) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array result_mlx = ::mlx::core::sigmoid(self_mlx, ::mlx::core::Device::gpu);
-  result_mlx.eval();
-
-  mlx::convert::set_tensor_result(result_mlx, output);
-}
-
 }
