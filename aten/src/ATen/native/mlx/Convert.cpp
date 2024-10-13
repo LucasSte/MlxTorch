@@ -9,7 +9,11 @@
 
 namespace at::native::mlx::convert {
 ::mlx::core::Dtype convert_type(const Tensor &self) {
-  switch (self.dtype().toScalarType()) {
+  return convert_scalar_type(self.dtype().toScalarType());
+}
+
+::mlx::core::Dtype convert_scalar_type(ScalarType t) {
+  switch (t) {
     case ScalarType::Byte:
       return ::mlx::core::uint8;
     case ScalarType::Char:

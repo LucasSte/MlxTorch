@@ -20,11 +20,11 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
   ::mlx::core::array mlx_targets = mlx::convert::tensor_to_mlx(target);
 
   ::mlx::core::array loged = ::mlx::core::log(mlx_input, ::mlx::core::Device::gpu);
-  ::mlx::core::array log_inputs_clip = ::mlx::core::clip(loged, ::mlx::core::array(-100.0), std::nullopt, ::mlx::core::Device::gpu);
+  ::mlx::core::array log_inputs_clip = ::mlx::core::clip(loged, ::mlx::core::array(-100.0, mlx::convert::convert_type(input)), std::nullopt, ::mlx::core::Device::gpu);
 
   ::mlx::core::array one_minus = ::mlx::core::subtract(::mlx::core::array(1), mlx_input, ::mlx::core::Device::gpu);
   ::mlx::core::array minus_log = ::mlx::core::log(one_minus, ::mlx::core::Device::gpu);
-  ::mlx::core::array log_inputs_inv_clip = ::mlx::core::clip(minus_log, ::mlx::core::array(-100.0), std::nullopt, ::mlx::core::Device::gpu);
+  ::mlx::core::array log_inputs_inv_clip = ::mlx::core::clip(minus_log, ::mlx::core::array(-100.0, mlx::convert::convert_type(input)), std::nullopt, ::mlx::core::Device::gpu);
 
   ::mlx::core::array lhs = ::mlx::core::multiply(mlx_targets, log_inputs_clip, ::mlx::core::Device::gpu);
   ::mlx::core::array rhs = ::mlx::core::multiply(one_minus, log_inputs_inv_clip,::mlx::core::Device::gpu);
@@ -73,9 +73,9 @@ Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
   ::mlx::core::array target_mlx = mlx::convert::tensor_to_mlx(target);
   ::mlx::core::array grad_mlx = mlx::convert::tensor_to_mlx(grad_output);
 
-  ::mlx::core::array epsilon = ::mlx::core::array(1e-12);
+  ::mlx::core::array epsilon = ::mlx::core::array(1e-12, mlx::convert::convert_type(input));
   // 1 - y
-  ::mlx::core::array one_input = ::mlx::core::subtract(::mlx::core::array(1.0), input_mlx, ::mlx::core::Device::gpu);
+  ::mlx::core::array one_input = ::mlx::core::subtract(::mlx::core::array(1.0, mlx::convert::convert_type(input)), input_mlx, ::mlx::core::Device::gpu);
   // y * (y - 1)
   ::mlx::core::array input_times = ::mlx::core::multiply(input_mlx, one_input, ::mlx::core::Device::gpu);
   // max(y * (1 - y), epsilon)
@@ -88,14 +88,12 @@ Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
   ::mlx::core::array bce_loss = ::mlx::core::multiply(grad_mlx, division, ::mlx::core::Device::gpu);
 
   if (weight.defined()) {
-    std::cout << "Calling backward4" << std::endl;
     ::mlx::core::array weight_mlx = mlx::convert::tensor_to_mlx(weight);
-    std::cout << "Calling backward5" << std::endl;
     bce_loss = ::mlx::core::multiply(bce_loss, weight_mlx, ::mlx::core::Device::gpu);
   }
 
   if (reduction == at::Reduction::Mean) {
-    ::mlx::core::array numel = ::mlx::core::array(static_cast<float>(input.numel()));
+    ::mlx::core::array numel = ::mlx::core::array(static_cast<float>(input.numel()), mlx::convert::convert_type(input));
     bce_loss = ::mlx::core::divide(bce_loss, numel, ::mlx::core::Device::gpu);
   }
 

@@ -12974,6 +12974,7 @@
   dispatch:
     CPU, CUDA: sigmoid_backward_out
     MPS: sigmoid_backward_out_mps
+    MLX: sigmoid_backward_out_mlx
   tags: pointwise
 
 - func: sigmoid_backward(Tensor grad_output, Tensor output) -> Tensor

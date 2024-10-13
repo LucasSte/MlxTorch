@@ -38,12 +38,10 @@ static Tensor wrapped_scalar_tensor_mlx(const Scalar& scalar, const Device devic
 }
 
 TORCH_IMPL_FUNC(ne_scalar_out_mlx)(const Tensor & self, const Scalar & other, const Tensor & result) {
-  std::cout << "The type is: " << (int)other.type() << std::endl;
   Tensor mat2 = wrapped_scalar_tensor_mlx(other, DeviceType::MLX);
 
   auto sizes = self.sizes();
   for (uint64_t item: sizes) {
-    std::cout << "Ne sizes: " << item << std::endl;
   }
   ne_out_mlx_impl(self, mat2, result);
 }
@@ -103,14 +101,12 @@ Tensor & fill_scalar_mlx(Tensor &self, const Scalar &value) {
   mlx_shape.resize(self_sizes.size());
   // TODO: Can this be optimized?
   for (size_t i=0; i<self_sizes.size(); i++) {
-    std::cout << "Fill size: " << self_sizes[i] << std::endl;
     mlx_shape[i] = static_cast<int>(self_sizes[i]);
   }
 
   ::mlx::core::array result = {};
   if (value.isFloatingPoint()) {
     float32_t val = value.toFloat();
-    std::cout << "The float is: " << val << std::endl;
     result = ::mlx::core::full(std::move(mlx_shape), val, ::mlx::core::float32);
   } else if (value.isBoolean()) {
     bool val = value.toBool();
@@ -125,10 +121,8 @@ Tensor & fill_scalar_mlx(Tensor &self, const Scalar &value) {
     result = ::mlx::core::full(std::move(mlx_shape), val, ::mlx::core::uint64);
   }
 
-  std::cout << "Calling eval" << std::endl;
   result.eval();
   mlx::convert::set_tensor_result(result, self);
-  std::cout << "Finished fill scalar" << std::endl;
   return self;
 }
 
