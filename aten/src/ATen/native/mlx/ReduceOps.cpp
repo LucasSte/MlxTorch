@@ -11,11 +11,13 @@
 #include <ATen/NativeFunctions.h>
 #else
 #include <ATen/ops/sum_native.h>
+#include <ATen/ops/sum.h>
+#include "ATen/core/ATen_fwd.h"
 #endif
 
 namespace at::native {
 
-TENSOR_IMPL_FUNC(sum_out_mlx)
+TORCH_IMPL_FUNC(sum_out_mlx)
 (const Tensor &input,
  OptionalIntArrayRef opt_dim,
  bool keepdim,
@@ -27,7 +29,20 @@ TENSOR_IMPL_FUNC(sum_out_mlx)
     input_mlx = ::mlx::core::astype(input_mlx, new_type, ::mlx::core::Device::gpu);
   }
 
+  ::mlx::core::array result = {};
+  if (opt_dim.has_value()) {
+    IntArrayRef dim_ref = opt_dim.value();
+    std::vector<int> dims(dim_ref.size());
+    for (size_t i=0; i<dim_ref.size(); i++) {
+      dims[i] = static_cast<int>(dim_ref[i]);
+    }
+    result = ::mlx::core::sum(input_mlx, dims, keepdim, ::mlx::core::Device::gpu);
+  } else {
+    result = ::mlx::core::sum(input_mlx, keepdim, ::mlx::core::Device::gpu);
+  }
 
+  result.eval();
+  mlx::convert::set_tensor_result(result, output_t);
 }
 
 }

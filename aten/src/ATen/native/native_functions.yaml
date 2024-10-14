@@ -5823,6 +5823,7 @@
   dispatch:
     CPU, CUDA: sum_out
     MPS: sum_out_mps
+    MLX: sum_out_mlx
 
 - func: sum.DimnameList_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
