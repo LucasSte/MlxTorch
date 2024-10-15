@@ -6107,6 +6107,7 @@
   dispatch:
     CPU, CUDA: threshold_backward_out
     MPS: threshold_backward_out_mps
+    MLX: threshold_backward_out_mlx
     SparseCPU, SparseCUDA: threshold_backward_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: threshold_backward_sparse_compressed_out
 
