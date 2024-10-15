@@ -1,5 +1,6 @@
 #include <ATen/native/mlx/Activation.h>
 #include <ATen/native/mlx/Convert.h>
+#include <ATen/Scalar.h>
 #include <mlx/ops.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
@@ -8,6 +9,8 @@
 #else
 #include <ATen/ops/sigmoid_native.h>
 #include <ATen/ops/sigmoid_backward_native.h>
+#include <ATen/ops/threshold_backward_native.h>
+#include <ATen/ops/threshold_native.h>
 #endif
 
 namespace at::native {
@@ -43,6 +46,26 @@ TORCH_IMPL_FUNC(sigmoid_backward_out_mlx)(const Tensor &grad_output, const Tenso
   grad_input_mlx.eval();
 
   mlx::convert::set_tensor_result(grad_input_mlx, grad_input);
+}
+
+TORCH_IMPL_FUNC(threshold_backward_out_mlx)
+(const Tensor &grad, const Tensor& self, const Scalar& threshold, const Tensor& gradInput) {
+
+
+  ::mlx::core::array input_tensor = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array grad_tensor = mlx::convert::tensor_to_mlx(grad);
+  ::mlx::core::Dtype mlx_type = mlx::convert::convert_type(self);
+  ::mlx::core::array threshold_tensor = ::mlx::core::array(threshold.to<float>(), mlx_type);
+  ::mlx::core::array zero_tensor = ::mlx::core::array(0.0, mlx_type);
+
+  // x > threshold
+  ::mlx::core::array predicate_tensor = ::mlx::core::greater(input_tensor, threshold_tensor, ::mlx::core::Device::gpu);
+
+  // result = (self > threshold) ? grad : zero_tensor
+  ::mlx::core::array grad_input_tensor = ::mlx::core::where(predicate_tensor, grad_tensor, zero_tensor, ::mlx::core::Device::gpu);
+  grad_input_tensor.eval();
+
+  mlx::convert::set_tensor_result(grad_input_tensor, gradInput);
 }
 
 }
