@@ -6907,6 +6907,7 @@
   dispatch:
     CPU, CUDA: zero_
     MPS: zero_mps_
+    MLX: zero_mlx_
     Meta: zero_meta_
     SparseCPU, SparseCUDA, SparseMeta: zero_sparse_
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: zero_sparse_csr_
