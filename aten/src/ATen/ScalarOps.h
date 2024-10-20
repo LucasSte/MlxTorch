@@ -36,6 +36,7 @@ inline at::Tensor scalar_to_tensor(
   if (device == at::kCPU) {
     return at::detail::scalar_tensor_static(s, s.type(), at::kCPU);
   }
+
   return at::scalar_tensor(s, at::device(device).dtype(s.type()));
 }
 
@@ -45,8 +46,7 @@ namespace at::native {
 
 inline Tensor wrapped_scalar_tensor(
     const Scalar& scalar,
-    const Device device = at::kCPU,
-    const std::string name = __builtin_FUNCTION()) {
+    const Device device = at::kCPU) {
   auto tensor = scalar_to_tensor(scalar, device);
   tensor.unsafeGetTensorImpl()->set_wrapped_number(true);
   return tensor;

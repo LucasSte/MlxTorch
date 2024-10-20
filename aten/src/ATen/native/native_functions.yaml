@@ -9745,6 +9745,7 @@
   dispatch:
     CPU, CUDA: lerp_Scalar
     MPS: lerp_Scalar_mps
+    MLX: lerp_scalar_mlx
   tags: pointwise
 
 - func: lerp.Tensor_out(Tensor self, Tensor end, Tensor weight, *, Tensor(a!) out) -> Tensor(a!)
