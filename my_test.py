@@ -3,7 +3,7 @@ import numpy as np
 
 torch.set_num_threads(1)
 
-dev = torch.device("mps")
+dev = torch.device("mlx")
 # np_arr = np.array([1, 2, 3, 4])
 np_arr = [[1, 2], [3, 4]]
 arr = torch.tensor(np_arr, dtype=torch.float32)

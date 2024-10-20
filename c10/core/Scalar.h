@@ -324,10 +324,11 @@ class C10_API Scalar {
   }
 
   ScalarType type() const {
+    // TODO: This has been edited for MLX
     if (isComplex()) {
-      return ScalarType::ComplexDouble;
+      return ScalarType::ComplexFloat;
     } else if (isFloatingPoint()) {
-      return ScalarType::Double;
+      return ScalarType::Float;
     } else if (isIntegral(/*includeBool=*/false)) {
       // Represent all integers as long, UNLESS it is unsigned and therefore
       // unrepresentable as long

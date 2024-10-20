@@ -28,7 +28,7 @@ namespace at::native::mlx::convert {
       return ::mlx::core::float16;
     case ScalarType::Float:
       return ::mlx::core::float32;
-    case ScalarType::ComplexDouble:
+    case ScalarType::ComplexFloat:
       return ::mlx::core::complex64;
     case ScalarType::Bool:
       return ::mlx::core::bool_;
@@ -41,7 +41,7 @@ namespace at::native::mlx::convert {
     case ScalarType::UInt64:
       return ::mlx::core::uint64;
     default:
-      TORCH_CHECK(false, "Invalid type");
+      TORCH_CHECK(false, "Invalid type1");
   }
 }
 
@@ -62,7 +62,7 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
     case ::mlx::core::Dtype::Val::float32:
       return ScalarType::Float;
     case ::mlx::core::Dtype::Val::complex64:
-      return ScalarType::ComplexDouble;
+      return ScalarType::ComplexFloat;
     case ::mlx::core::Dtype::Val::bool_:
       return ScalarType::Bool;
     case ::mlx::core::Dtype::Val::bfloat16:
@@ -74,7 +74,7 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
     case ::mlx::core::Dtype::Val::uint64:
       return ScalarType::UInt64;
     default:
-      TORCH_CHECK(false, "Invalid type");
+      TORCH_CHECK(false, "Invalid type2");
   }
 }
 
@@ -107,8 +107,7 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   return self_mlx;
 }
 
-void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & tensor_result,
-                       const std::string name) {
+void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & tensor_result) {
   auto data_ptr = mlx_result.data_shared_ptr();
   Allocator *allocator = at::mlx::getMLXAllocator();
   ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());
