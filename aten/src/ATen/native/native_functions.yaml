@@ -9349,6 +9349,7 @@
   dispatch:
     CPU, CUDA: addcmul_out
     MPS: addcmul_out_mps
+    MLX: addcmul_out_mlx
   tags: pointwise
 
 - func: addcmul(Tensor self, Tensor tensor1, Tensor tensor2, *, Scalar value=1) -> Tensor
