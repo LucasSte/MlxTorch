@@ -5877,6 +5877,7 @@
   dispatch:
     CPU, CUDA: sqrt_out
     MPS: sqrt_out_mps
+    MLX: sqrt_out_mlx
     SparseCPU, SparseCUDA: sqrt_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: sqrt_sparse_csr_out
   tags: pointwise
