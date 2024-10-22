@@ -2159,6 +2159,7 @@
   dispatch:
     CPU, CUDA: div_out
     MPS: div_out_mps
+    MLX: div_out_mlx
     SparseCPU, SparseCUDA: div_out_sparse_zerodim
   tags: pointwise
 
