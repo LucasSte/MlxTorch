@@ -7,6 +7,7 @@
 #include <ATen/Functions.h>
 #include <ATen/NativeFunctions.h>
 #else
+#include <ATen/ops/div_native.h>
 #include <ATen/ops/lerp_native.h>
 #include <ATen/ops/result_type.h>
 #endif
@@ -46,4 +47,14 @@ TORCH_IMPL_FUNC(lerp_scalar_mlx)(const Tensor& self, const Tensor& end, const Sc
   out_mlx.eval();
   mlx::convert::set_tensor_result(out_mlx, out);
 }
+
+TORCH_IMPL_FUNC(div_out_mlx)(const Tensor& self, const Tensor& other, const Tensor& output) {
+  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array other_mlx = mlx::convert::tensor_to_mlx(other);
+  ::mlx::core::array result_mlx = ::mlx::core::divide(self_mlx, other_mlx, ::mlx::core::Device::gpu);
+  result_mlx.eval();
+
+  mlx::convert::set_tensor_result(result_mlx, output);
+}
+
 }
