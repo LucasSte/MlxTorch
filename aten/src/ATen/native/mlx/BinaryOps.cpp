@@ -7,6 +7,7 @@
 #include <ATen/Functions.h>
 #include <ATen/NativeFunctions.h>
 #else
+#include <ATen/ops/add_native.h>
 #include <ATen/ops/div_native.h>
 #include <ATen/ops/lerp_native.h>
 #include <ATen/ops/result_type.h>
@@ -38,7 +39,8 @@ TORCH_IMPL_FUNC(lerp_scalar_mlx)(const Tensor& self, const Tensor& end, const Sc
   }
   ::mlx::core::array start_mlx = mlx::convert::tensor_to_mlx(self);
   ::mlx::core::array end_mlx = mlx::convert::tensor_to_mlx(end);
-  ::mlx::core::array weight_mlx = ::mlx::core::array(static_cast<float>(weight.toDouble()), mlx::convert::convert_type(self));
+  // TODO: Not only float is allowed here!
+  ::mlx::core::array weight_mlx = mlx::convert::scalar_to_mlx(weight);
 
   ::mlx::core::array sub = ::mlx::core::subtract(end_mlx, start_mlx, ::mlx::core::Device::gpu);
   ::mlx::core::array mult = ::mlx::core::multiply(sub, weight_mlx, ::mlx::core::Device::gpu);
@@ -54,6 +56,17 @@ TORCH_IMPL_FUNC(div_out_mlx)(const Tensor& self, const Tensor& other, const Tens
   ::mlx::core::array result_mlx = ::mlx::core::divide(self_mlx, other_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
+  mlx::convert::set_tensor_result(result_mlx, output);
+}
+
+TORCH_IMPL_FUNC(add_out_mlx)(const Tensor& self, const Tensor& other, const Scalar& alpha, const Tensor& output) {
+  ::mlx::core::array other_mlx = mlx::convert::tensor_to_mlx(other);
+  ::mlx::core::array alpha_mlx = mlx::convert::scalar_to_mlx(alpha);
+
+  ::mlx::core::array mul = ::mlx::core::multiply(other_mlx, alpha_mlx, ::mlx::core::Device::gpu);
+  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array result_mlx = ::mlx::core::add(self_mlx, mul, ::mlx::core::Device::gpu);
+  result_mlx.eval();
   mlx::convert::set_tensor_result(result_mlx, output);
 }
 

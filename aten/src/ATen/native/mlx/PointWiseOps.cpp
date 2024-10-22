@@ -22,7 +22,7 @@ TORCH_IMPL_FUNC(addcmul_out_mlx)
 
   ::mlx::core::array t1 = mlx::convert::tensor_to_mlx(tensor1);
   ::mlx::core::array t2 = mlx::convert::tensor_to_mlx(tensor2);
-  ::mlx::core::array val = ::mlx::core::array(static_cast<float>(value.toDouble()), mlx::convert::convert_type(tensor1));
+  ::mlx::core::array val = mlx::convert::scalar_to_mlx(value);
 
   ::mlx::core::array mul1 = ::mlx::core::multiply(t1, t2, ::mlx::core::Device::gpu);
   ::mlx::core::array mul2 = ::mlx::core::multiply(val, mul1, ::mlx::core::Device::gpu);
