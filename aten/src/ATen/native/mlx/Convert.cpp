@@ -173,4 +173,26 @@ Tensor new_from_mlx(const ::mlx::core::array & input) {
   return tensor;
 }
 
+::mlx::core::array scalar_to_mlx(const Scalar &scalar) {
+  const ScalarType dtype = scalar.type();
+  const ::mlx::core::Dtype mlx_type = convert_scalar_type(dtype);
+
+  switch (dtype) {
+    case ScalarType::ComplexFloat: {
+      c10::complex<float> complex_num = scalar.toComplexFloat();
+      std::complex<float> mlx_float = {complex_num.real(), complex_num.imag()};
+      return ::mlx::core::array(mlx_float, mlx_type);
+    }
+    case ScalarType::Float:
+      return ::mlx::core::array(scalar.toFloat(), mlx_type);
+    case ScalarType::UInt64:
+    case ScalarType::Long:
+      return ::mlx::core::array(scalar.toUInt64(), mlx_type);
+    case ScalarType::Bool:
+      return ::mlx::core::array(scalar.toBool(), mlx_type);
+    default:
+      throw std::runtime_error("Unknown scalar type MLX.");
+  }
+
+}
 }

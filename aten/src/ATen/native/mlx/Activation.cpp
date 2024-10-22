@@ -55,7 +55,7 @@ TORCH_IMPL_FUNC(threshold_backward_out_mlx)
   ::mlx::core::array input_tensor = mlx::convert::tensor_to_mlx(self);
   ::mlx::core::array grad_tensor = mlx::convert::tensor_to_mlx(grad);
   ::mlx::core::Dtype mlx_type = mlx::convert::convert_type(self);
-  ::mlx::core::array threshold_tensor = ::mlx::core::array(threshold.to<float>(), mlx_type);
+  ::mlx::core::array threshold_tensor = mlx::convert::scalar_to_mlx(threshold);
   ::mlx::core::array zero_tensor = ::mlx::core::array(0.0, mlx_type);
 
   // x > threshold

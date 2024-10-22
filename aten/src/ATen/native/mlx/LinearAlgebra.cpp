@@ -81,8 +81,8 @@ TORCH_IMPL_FUNC(addmm_out_mlx)
  ::mlx::core::array input = mlx::convert::tensor_to_mlx(mat1);
  ::mlx::core::array weight = mlx::convert::tensor_to_mlx(mat2);
 
- float fbeta = beta.toDouble();
- float falpha = alpha.toDouble();
+ float fbeta = beta.toFloat();
+ float falpha = alpha.toFloat();
  ::mlx::core::array result_mlx = ::mlx::core::addmm(bias, input, weight, falpha, fbeta, ::mlx::core::Device::gpu);
  result_mlx.eval();
  mlx::convert::set_tensor_result(result_mlx, const_cast<Tensor&>(result));
