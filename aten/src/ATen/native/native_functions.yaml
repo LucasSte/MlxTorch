@@ -5010,6 +5010,7 @@
     CPU: round_out
     CUDA: round_out
     MPS: round_out_mps
+    MLX: round_out_mlx
     SparseCPU, SparseCUDA: round_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: round_sparse_csr_out
   tags: pointwise
