@@ -5,6 +5,7 @@
 #include <structmember.h>
 
 #include <ATen/mps/MPSDevice.h>
+#include <ATen/mlx/MLXAllocator.h>
 #include <c10/core/CPUAllocator.h>
 #include <c10/core/RefcountedDeleter.h>
 #include <libshm.h>
@@ -353,6 +354,9 @@ static PyObject* THPStorage_pynew(
         allocator = at::mps::GetMPSAllocator();
         break;
 #endif
+      case at::kMLX:
+        allocator = at::mlx::getMLXAllocator();
+      break;
       case at::DeviceType::XPU:
       case at::DeviceType::HPU:
       case at::DeviceType::Meta:
