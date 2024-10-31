@@ -1790,6 +1790,7 @@
 - func: _copy_from(Tensor self, Tensor dst, bool non_blocking=False) -> Tensor
   dispatch:
     MPS: _copy_from_mps
+    MLX: _copy_from_mlx
   autogen: _copy_from.out
 
 # We need this to be able to properly copy from a CPU to an XLA tensor with different sizes.
@@ -3966,6 +3967,7 @@
   dispatch:
     CPU, CUDA: mean_out
     MPS: mean_out_mps
+    MLX: mean_out_mlx
     QuantizedCPU: mean_out_quantized_cpu
 
 - func: mean.names_dim(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
