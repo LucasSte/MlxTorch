@@ -223,7 +223,6 @@ static Tensor & copy_impl(Tensor & self, const Tensor & src, bool non_blocking) 
   // Both the _copy_from calls above will be dispatched to XLA's _copy_from kernels.
 
   if (!is_supported_device(src.device()) || !is_supported_device(self.device())) {
-    std::cout << "Called copy_impl!" << std::endl;
     at::_copy_from(src, self, non_blocking);
     return self;
   }
