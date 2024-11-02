@@ -62,12 +62,13 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
 //  }
 //
 
-// 1. Make sure the minimal example is working (If I use MPS operations, they need syncing, otherwise, only evaluate when copying to cpu).
-// 2. Fix the type bug in the minimal example
+// 1. Fix the type bug in the minimal example
+// 2. Ensure all operations are correctly implemented (write mlx evaluation tests)
 // 3. If it works, modify pytorch to not allocate a tensor beforehand for MLX. (register_dispatch_key.py -> create_out)
-// 4. Only evaluate when needed. If I use MPS operations (try to avoid them), evaluate MLX and sync MPS.
-// 5. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
-// 6. Release
+// 4. Reduce operations overhead (creating mlx tensors)
+// 5. Only evaluate when needed. If I use MPS operations (try to avoid them), evaluate MLX and sync MPS.
+// 6. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
+// 7. Release
 }
 
 TORCH_IMPL_FUNC(addmm_out_mlx)
