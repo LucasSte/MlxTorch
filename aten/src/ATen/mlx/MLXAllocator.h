@@ -22,6 +22,6 @@ struct TORCH_API MLXAllocator final : public c10::Allocator {
 //  static void Delete(void *ptr);
 //};
 
-MLXAllocator* getMLXAllocator();
+TORCH_API MLXAllocator* getMLXAllocator();
 //MLXCpuAllocator* getMLXCpuAllocator();
 } // namespace at::mlx
