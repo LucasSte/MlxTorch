@@ -48,20 +48,6 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
 
   mlx::convert::set_tensor_result(result_mlx, result);
 
-//  const at::DataPtr& test_ptr = result.storage().data_ptr();
-
-  // float32_t * ptr = reinterpret_cast<float32_t*>(test_ptr.get());
-  // Dispatch stub for MLX is not working. (print(mlx_arr) -> after matmul)
-
-  // Is this needed?
-//  auto self_strides = self.strides();
-//  std::vector<size_t> mlx_strides;
-//  mlx_strides.resize(self_strides.size());
-//  for (size_t i=0; i<self_strides.size(); i++) {
-//    mlx_strides[i] = static_cast<size_t>(self_strides[i]);
-//  }
-//
-
 // 1. Fix the type bug in the minimal example
 // 2. Ensure all operations are correctly implemented (write mlx evaluation tests)
 // 3. If it works, modify pytorch to not allocate a tensor beforehand for MLX. (register_dispatch_key.py -> create_out)
