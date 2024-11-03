@@ -426,6 +426,7 @@ def _str_intern(inp, *, tensor_contents=None):
             and torch.cuda.current_device() != self.device.index
         )
         or (self.device.type == "mps")
+        or (self.device.type == "mlx")
     ):
         suffixes.append("device='" + str(self.device) + "'")
 
