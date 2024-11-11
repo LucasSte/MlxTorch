@@ -398,8 +398,9 @@ Tensor _to_copy(
               if (self.dtype().toScalarType() == ScalarType::Double) {
                 Tensor casted = self.to(self.device(), ScalarType::Float, false, true);
                 return cpu_to_mlx(casted);
+              } else if (self.storage().data_ptr().in_mlx_cpu()) {
+                return cpu_to_mlx(self);
               }
-              return cpu_to_mlx(self);
             } else if(self.device().type() == at::DeviceType::MLX && device->type() == at::DeviceType::CPU) {
               // std::cout << "I am passing from mlx to cpu" << std::endl;
               caffe2::TypeMeta mlx_dtype = self.dtype();
@@ -410,7 +411,7 @@ Tensor _to_copy(
               ctr_ptr->rc.fetch_add(1);
 
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
-              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
+              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1), true);
               auto storage_impl = c10::make_intrusive<StorageImpl>(
                   c10::StorageImpl::use_byte_size_t(),
                   size_bytes,

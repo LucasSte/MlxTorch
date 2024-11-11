@@ -72,6 +72,10 @@ TORCH_IMPL_FUNC(mean_out_mlx)
   }
 
   result.eval();
+  std::vector<int> res_shape = result.shape();
+  for(int elem: res_shape) {
+    std::cout << "Shape: " << elem << std::endl;
+  }
   mlx::convert::set_tensor_result(result, output_t);
 }
 

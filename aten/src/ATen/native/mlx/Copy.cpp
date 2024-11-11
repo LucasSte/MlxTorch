@@ -5,8 +5,27 @@
 #include <mlx/allocator.h>
 #include <c10/core/Allocator.h>
 #include <ATen/mlx/MLXAllocator.h>
+#include <ATen/core/TensorBase.h>
+#include <ATen/ops/empty_like.h>
+#include <ATen/ops/empty_like_native.h>
 
 namespace at::native {
+
+static size_t compute_storage_numel_distance(const TensorBase& t) {
+  size_t rc = 1;
+  if (t.numel() == 0) {
+    return 0;
+  }
+  for (const auto i : c10::irange(t.dim())) {
+    assert(t.size(i) > 0);
+    rc += (t.size(i) - 1) * t.stride(i);
+  }
+  return rc;
+}
+
+inline bool is_dense_in_storage(const TensorBase& t) {
+  return compute_storage_numel_distance(t) == static_cast<size_t>(t.numel());
+}
 
 static Tensor copy_mlx(const Tensor &src, const Tensor &dst, bool sameType) {
   ::mlx::core::array src_mlx = mlx::convert::tensor_to_mlx(src);
@@ -30,6 +49,41 @@ static Tensor copy_between_devices(const Tensor &src, const Tensor &dst, const a
   return dst;
 }
 
+static void copy_to_mlx_from_external(Tensor &dst, const Tensor &src) {
+  size_t dst_byte_offset = static_cast<size_t>(dst.storage_offset()) * dst.itemsize();
+  size_t src_byte_offset = static_cast<size_t>(src.storage_offset()) * src.itemsize();
+  const size_t size_to_copy = src.nbytes();
+  const void* host_src = static_cast<const char*>(src.storage().data()) + src_byte_offset;
+
+  const at::DataPtr& data_ptr = dst.storage().data_ptr();
+  void* dst_str = static_cast<char*>(data_ptr.get()) + dst_byte_offset;
+  std::memcpy(dst_str, host_src, size_to_copy);
+}
+
+static Tensor copy_from_non_mlx(const Tensor &src_, const Tensor &dst_) {
+  Tensor src = (src_.dtype() != dst_.dtype() ? src_.to(dst_.dtype()) : src_).expand_as(dst_);
+
+  // If src is not densely mapped in storage it must be cloned
+  // It does not mean that tensor is contiguous, but rather
+  // that it could be represented as 1d view
+  if (!is_dense_in_storage(src)) {
+    src = src.clone();
+    TORCH_INTERNAL_ASSERT(is_dense_in_storage(src));
+  }
+  Tensor dst = dst_;
+  bool needs_copy = false;
+  // If src and dst_ strides do not match, it means that
+  // either dst_ is not representable as 1d view or its stride order is different
+  // in that case create an empty storage like src, copy it to device and then do
+  // reshaping on the device
+  if (src.strides() != dst_.strides()) {
+    needs_copy = true;
+    dst = at::empty_like(src, at::device(at::kMLX));
+  }
+
+  copy_to_mlx_from_external(dst, src);
+  return needs_copy ? dst_.copy_(dst) : dst_;
+}
 
 Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) {
   // TODO: I'm considering there'll be no change in the memory format
@@ -65,6 +119,10 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
 
   // TODO: I'm assuming we can avoid a copy in these two cases.
   if (self.device().type() == at::kCPU && dst.device().type() == kMLX) {
+    if (!self.storage().data_ptr().in_mlx_cpu()) {
+        return copy_from_non_mlx(needs_broadcasting ? self.expand_as(dst) : self, dst);
+    }
+
     Tensor res = copy_between_devices(needs_broadcasting ? self.expand_as(dst) : self, dst, at::Device(at::DeviceType::MLX, 0));
     if (!sameDataType) {
       ::mlx::core::array res_mlx = mlx::convert::tensor_to_mlx(res);
