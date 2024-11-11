@@ -60,7 +60,7 @@ TORCH_IMPL_FUNC(mean_out_mlx)
 
   ::mlx::core::array result_mlx = {};
   ::mlx::core::array result = {};
-  if (opt_dim.has_value()) {
+  if (opt_dim.has_value() && !opt_dim.value().empty()) {
     IntArrayRef dim_ref = opt_dim.value();
     std::vector<int> dims(dim_ref.size());
     for (size_t i=0; i<dim_ref.size(); i++) {
@@ -73,9 +73,6 @@ TORCH_IMPL_FUNC(mean_out_mlx)
 
   result.eval();
   std::vector<int> res_shape = result.shape();
-  for(int elem: res_shape) {
-    std::cout << "Shape: " << elem << std::endl;
-  }
   mlx::convert::set_tensor_result(result, output_t);
 }
 
