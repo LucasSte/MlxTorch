@@ -2,6 +2,7 @@
 #include <c10/core/ScalarType.h>
 #include <ATen/mlx/MLXAllocator.h>
 #include <mlx/allocator.h>
+#include <mlx/ops.h>
 #include <mlx/dtype.h>
 #include <ATen/Storage.h>
 #include <c10/core/SymInt.h>
@@ -101,17 +102,16 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
 
   ::mlx::core::Dtype mlx_type = convert_type(self);
 
-  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) * self.dtype().itemsize();
+//  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) * self.dtype().itemsize();
   ::mlx::core::array self_mlx = ::mlx::core::array(
       std::move(buf),
-      std::move(mlx_shape),
+      mlx_shape,
       mlx_type,
       ::mlx::core::allocator::free
   );
-  self_mlx.set_storage_offset(bytes_offset);
-  self_mlx.set_strides(std::move(mlx_strides), self.is_contiguous());
-
-  return self_mlx;
+  ::mlx::core::array mlx_res = ::mlx::core::as_strided(self_mlx, std::move(mlx_shape), std::move(mlx_strides), static_cast<size_t>(self.storage_offset()));
+  mlx_res.eval();
+  return mlx_res;
 }
 
 void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & tensor_result) {
@@ -127,7 +127,7 @@ void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & ten
 
   const std::vector<int> &mlx_sizes = mlx_result.shape();
   std::vector<int64_t> torch_sizes(mlx_sizes.size());
-  for (size_t i=0; i<torch_sizes.size(); i++) {
+  for (size_t i=0; i<mlx_sizes.size(); i++) {
     torch_sizes[i] = static_cast<int64_t>(mlx_sizes[i]);
   }
   IntArrayRef sizes_ref = ArrayRef<int64_t>(torch_sizes);
@@ -140,7 +140,7 @@ void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & ten
   IntArrayRef strides_ref = ArrayRef<int64_t>(torch_strides);
 
   std::optional<int64_t> storage_offset = std::nullopt;
-  if (bytes_offset > 0 && bytes_offset != original_offset) {
+  if (bytes_offset != original_offset) {
     storage_offset = static_cast<int64_t>(bytes_offset / tensor_result.dtype().itemsize());
   }
 

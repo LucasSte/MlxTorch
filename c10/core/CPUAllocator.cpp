@@ -164,7 +164,7 @@ struct TORCH_API MLXCpuAllocator final : public c10::Allocator {
   DataPtr allocate(size_t n) override {
     // NOTE: I modified mlx to allocate n+8, and return ptr+8 for the raw ptr
     ::mlx::core::allocator::Buffer buf = ::mlx::core::allocator::malloc_or_wait(n);
-    return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXCpuAllocator::Delete, at::Device(at::DeviceType::CPU)};
+    return DataPtr{buf.raw_ptr(), buf.raw_ptr(), &MLXCpuAllocator::Delete, at::Device(at::DeviceType::CPU), true};
   }
 
   DeleterFnPtr raw_deleter() const override {

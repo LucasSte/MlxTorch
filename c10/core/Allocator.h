@@ -27,14 +27,17 @@ class C10_API DataPtr {
  private:
   c10::detail::UniqueVoidPtr ptr_;
   Device device_;
+  bool is_mlx_cpu;
 
  public:
   // Choice of CPU here is arbitrary; if there's an "undefined" device
   // we could use that too
-  DataPtr() : ptr_(), device_(DeviceType::CPU) {}
-  DataPtr(void* data, Device device) : ptr_(data), device_(device) {}
+  DataPtr() : ptr_(), device_(DeviceType::CPU), is_mlx_cpu(false) {}
+  DataPtr(void* data, Device device) : ptr_(data), device_(device), is_mlx_cpu(false) {}
   DataPtr(void* data, void* ctx, DeleterFnPtr ctx_deleter, Device device)
-      : ptr_(data, ctx, ctx_deleter), device_(device) {}
+      : ptr_(data, ctx, ctx_deleter), device_(device), is_mlx_cpu(false) {}
+  DataPtr(void* data, void* ctx, DeleterFnPtr ctx_deleter, Device device, bool is_mlx_cpu)
+      : ptr_(data, ctx, ctx_deleter), device_(device), is_mlx_cpu(is_mlx_cpu) {}
   void* operator->() const {
     return ptr_.get();
   }
@@ -52,6 +55,9 @@ class C10_API DataPtr {
   }
   void* release_context() {
     return ptr_.release_context();
+  }
+  bool in_mlx_cpu() const {
+    return is_mlx_cpu;
   }
   std::unique_ptr<void, DeleterFnPtr>&& move_context() {
     return ptr_.move_context();
