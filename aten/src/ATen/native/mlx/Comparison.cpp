@@ -58,7 +58,7 @@ void eq_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
   ::mlx::core::array result_mlx = ::mlx::core::equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
   auto out_sizes = result.sizes();
-  mlx::convert::set_tensor_result(result_mlx, result);
+  mlx::convert::introduce_result(result_mlx, result);
 }
 
 void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
@@ -67,7 +67,7 @@ void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
 
   ::mlx::core::array result_mlx = ::mlx::core::not_equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
-  mlx::convert::set_tensor_result(result_mlx, result);
+  mlx::convert::introduce_result(result_mlx, result);
 }
 
 Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
@@ -75,7 +75,7 @@ Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
 
   ::mlx::core::array result_mlx = ::mlx::core::abs(self_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
-  mlx::convert::set_tensor_result(result_mlx, output);
+  mlx::convert::introduce_result(result_mlx, output);
 
   if (!output.is_same_size(self)) {
     // TODO: Set storage size nbytes here!
@@ -86,7 +86,6 @@ Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
     }
   }
 
-  auto sizes = output.sizes();
   return output;
 }
 

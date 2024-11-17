@@ -36,7 +36,7 @@ Tensor & fill_scalar_mlx(Tensor &self, const Scalar &value) {
   }
 
   result.eval();
-  mlx::convert::set_tensor_result(result, self);
+  mlx::convert::introduce_result(result, self);
   return self;
 }
 

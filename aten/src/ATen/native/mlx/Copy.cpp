@@ -34,7 +34,7 @@ static Tensor copy_mlx(const Tensor &src, const Tensor &dst, bool sameType) {
   }
   ::mlx::core::array result = ::mlx::core::copy(src_mlx, ::mlx::core::Device::gpu);
   result.eval();
-  mlx::convert::set_tensor_result(result, dst);
+  mlx::convert::introduce_result(result, dst);
   return dst;
 }
 
@@ -128,7 +128,7 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
       ::mlx::core::array res_mlx = mlx::convert::tensor_to_mlx(res);
       ::mlx::core::array casted = ::mlx::core::astype(res_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
       casted.eval();
-      mlx::convert::set_tensor_result(res_mlx, res);
+      mlx::convert::introduce_result(res_mlx, res);
     }
     return res;
   }
@@ -138,7 +138,7 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
       ::mlx::core::array res_mlx = mlx::convert::tensor_to_mlx(self);
       ::mlx::core::array casted = ::mlx::core::astype(res_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
       casted.eval();
-      mlx::convert::set_tensor_result(res_mlx, dst);
+      mlx::convert::introduce_result(res_mlx, dst);
       return dst;
     }
     return copy_between_devices(needs_broadcasting ? self.expand_as(dst) : self, dst, at::Device(at::DeviceType::CPU, -1));

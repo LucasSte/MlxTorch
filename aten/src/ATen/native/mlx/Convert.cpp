@@ -114,39 +114,6 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   return mlx_res;
 }
 
-void set_tensor_result(const ::mlx::core::array & mlx_result, const Tensor & tensor_result) {
-  auto data_ptr = mlx_result.data_shared_ptr();
-  Allocator *allocator = at::mlx::getMLXAllocator();
-  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());
-  ctr_ptr->rc.fetch_add(1);
-  DataPtr pytorch_ptr(data_ptr->buffer.raw_ptr(), data_ptr->buffer.raw_ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
-
-  auto old_ptr = tensor_result.storage().set_data_ptr(std::move(pytorch_ptr));
-  size_t bytes_offset = mlx_result.storage_offset();
-  size_t original_offset = static_cast<size_t>(tensor_result.storage_offset()) * tensor_result.dtype().itemsize();
-
-  const std::vector<int> &mlx_sizes = mlx_result.shape();
-  std::vector<int64_t> torch_sizes(mlx_sizes.size());
-  for (size_t i=0; i<mlx_sizes.size(); i++) {
-    torch_sizes[i] = static_cast<int64_t>(mlx_sizes[i]);
-  }
-  IntArrayRef sizes_ref = ArrayRef<int64_t>(torch_sizes);
-
-  const std::vector<size_t> &mlx_strides = mlx_result.strides();
-  std::vector<int64_t> torch_strides(mlx_strides.size());
-  for (size_t i=0; i<mlx_strides.size(); i++) {
-    torch_strides[i] = static_cast<int64_t>(mlx_strides[i]);
-  }
-  IntArrayRef strides_ref = ArrayRef<int64_t>(torch_strides);
-
-  std::optional<int64_t> storage_offset = std::nullopt;
-  if (bytes_offset != original_offset) {
-    storage_offset = static_cast<int64_t>(bytes_offset / tensor_result.dtype().itemsize());
-  }
-
-  tensor_result.unsafeGetTensorImpl()->set_sizes_and_strides(sizes_ref, strides_ref, storage_offset);
-}
-
 Tensor new_from_mlx(const ::mlx::core::array & input) {
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
   // What about using the Data shared ptr for memory management?
@@ -215,6 +182,42 @@ Tensor new_from_mlx(const ::mlx::core::array & input) {
     default:
       throw std::runtime_error("Unknown scalar type MLX.");
   }
+}
 
+void introduce_result(const ::mlx::core::array& mlx_result, const Tensor& tensor_result) {
+  auto data_ptr = mlx_result.data_shared_ptr();
+  Allocator *allocator = at::mlx::getMLXAllocator();
+  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());
+  ctr_ptr->rc.fetch_add(1);
+  DataPtr pytorch_ptr(data_ptr->buffer.raw_ptr(), data_ptr->buffer.raw_ptr(), allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
+
+  auto old_ptr = tensor_result.storage().set_data_ptr(std::move(pytorch_ptr));
+  c10::SymInt size_bytes(static_cast<int64_t>(ctr_ptr->usable_size(::mlx::core::allocator::Buffer(ctr_ptr->mtl_ptr))));
+
+  tensor_result.storage().set_nbytes(std::move(size_bytes));
+  size_t bytes_offset = mlx_result.storage_offset();
+  size_t original_offset = static_cast<size_t>(tensor_result.storage_offset()) * tensor_result.dtype().itemsize();
+
+  const std::vector<int> &mlx_sizes = mlx_result.shape();
+  std::vector<int64_t> torch_sizes(mlx_sizes.size());
+  for (size_t i=0; i<mlx_sizes.size(); i++) {
+    torch_sizes[i] = static_cast<int64_t>(mlx_sizes[i]);
+  }
+  IntArrayRef sizes_ref = ArrayRef<int64_t>(torch_sizes);
+
+  const std::vector<size_t> &mlx_strides = mlx_result.strides();
+  std::vector<int64_t> torch_strides(mlx_strides.size());
+  for (size_t i=0; i<mlx_strides.size(); i++) {
+    torch_strides[i] = static_cast<int64_t>(mlx_strides[i]);
+  }
+  IntArrayRef strides_ref = ArrayRef<int64_t>(torch_strides);
+
+  std::optional<int64_t> storage_offset = std::nullopt;
+  if (bytes_offset != original_offset) {
+    storage_offset = static_cast<int64_t>(bytes_offset / tensor_result.dtype().itemsize());
+  }
+
+  tensor_result.unsafeGetTensorImpl()->set_sizes_and_strides(sizes_ref, strides_ref, storage_offset);
+  tensor_result.storage().unsafeGetStorageImpl()->set_resizable(true);
 }
 }

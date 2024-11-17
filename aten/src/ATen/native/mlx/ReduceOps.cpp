@@ -43,7 +43,7 @@ TORCH_IMPL_FUNC(sum_out_mlx)
   }
 
   result.eval();
-  mlx::convert::set_tensor_result(result, output_t);
+  mlx::convert::introduce_result(result, output_t);
 }
 
 TORCH_IMPL_FUNC(mean_out_mlx)
@@ -72,8 +72,7 @@ TORCH_IMPL_FUNC(mean_out_mlx)
   }
 
   result.eval();
-  std::vector<int> res_shape = result.shape();
-  mlx::convert::set_tensor_result(result, output_t);
+  mlx::convert::introduce_result(result, output_t);
 }
 
 }

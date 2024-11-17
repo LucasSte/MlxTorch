@@ -120,6 +120,15 @@ def gen_create_out_helper(backend_index: BackendIndex) -> list[str]:
     if empty_impl is None:
         return []
 
+    if backend_index.dispatch_key == DispatchKey.MLX:
+        return [
+            f"""
+Tensor create_out(IntArrayRef sizes, IntArrayRef strides, const TensorOptions &options) {{
+    return detail::create_null_mlx(sizes, strides, {empty_options});
+}}
+"""
+        ]
+
     return [
         f"""
 Tensor create_out(IntArrayRef sizes, IntArrayRef strides, const TensorOptions &options) {{

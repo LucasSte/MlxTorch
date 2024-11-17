@@ -34,4 +34,9 @@ C10_EXPORT TensorBase empty_strided_mlx(
     IntArrayRef stride,
     const TensorOptions &options);
 
+C10_EXPORT TensorBase create_null_mlx(
+    IntArrayRef size,
+    IntArrayRef stride,
+    const TensorOptions &options);
+
 } // namespace at::detail

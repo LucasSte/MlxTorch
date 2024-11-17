@@ -126,4 +126,36 @@ TensorBase empty_strided_mlx(
       options.pinned_memory_opt());
 }
 
+TensorBase create_null_mlx(
+    IntArrayRef size,
+    IntArrayRef stride,
+    const TensorOptions &options) {
+//  std::cout << "Calling create null" << std::endl;
+  at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
+  DataPtr null_ptr(nullptr, nullptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
+  c10::SymInt size_bytes(0);
+  auto storage_impl = c10::make_intrusive<StorageImpl>(
+      c10::StorageImpl::use_byte_size_t(),
+      size_bytes,
+      std::move(null_ptr),
+      mlx_allocator,
+      false
+      );
+
+  constexpr c10::DispatchKey mlx_dks(c10::DispatchKey::MLX);
+  auto dtype = dtype_or_default(options.dtype_opt());
+  TORCH_CHECK_TYPE(dtype != ScalarType::Double, "Double not supported");
+  auto tensor = at::detail::make_tensor_base<TensorImpl>(
+      std::move(storage_impl), mlx_dks, dtype
+      );
+
+  // I believe the following is not necessary
+//  if (stride.empty() && (size.size() != 1 || size[0] != 0)) {
+//    tensor.unsafeGetTensorImpl()->set_sizes_contiguous(size);
+//  } else if (!stride.empty()) {
+//    tensor.unsafeGetTensorImpl()->set_sizes_and_strides(size, stride);
+//  }
+  return tensor;
+}
+
 } // namespace at::detail
