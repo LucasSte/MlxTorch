@@ -28,7 +28,7 @@ TORCH_IMPL_FUNC(sigmoid_out_mlx)(const Tensor& self, const Tensor& output) {
   ::mlx::core::array result_mlx = ::mlx::core::sigmoid(self_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
-  mlx::convert::set_tensor_result(result_mlx, output);
+  mlx::convert::introduce_result(result_mlx, output);
 }
 
 TORCH_IMPL_FUNC(sigmoid_backward_out_mlx)(const Tensor &grad_output, const Tensor &output, const Tensor &grad_input) {
@@ -45,7 +45,7 @@ TORCH_IMPL_FUNC(sigmoid_backward_out_mlx)(const Tensor &grad_output, const Tenso
 
   grad_input_mlx.eval();
 
-  mlx::convert::set_tensor_result(grad_input_mlx, grad_input);
+  mlx::convert::introduce_result(grad_input_mlx, grad_input);
 }
 
 TORCH_IMPL_FUNC(threshold_backward_out_mlx)
@@ -65,7 +65,7 @@ TORCH_IMPL_FUNC(threshold_backward_out_mlx)
   ::mlx::core::array grad_input_tensor = ::mlx::core::where(predicate_tensor, grad_tensor, zero_tensor, ::mlx::core::Device::gpu);
   grad_input_tensor.eval();
 
-  mlx::convert::set_tensor_result(grad_input_tensor, gradInput);
+  mlx::convert::introduce_result(grad_input_tensor, gradInput);
 }
 
 }

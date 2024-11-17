@@ -32,7 +32,7 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
   ::mlx::core::array result_mlx = ::mlx::core::multiply(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
-  mlx::convert::set_tensor_result(result_mlx, output);
+  mlx::convert::introduce_result(result_mlx, output);
 }
 
 
@@ -46,14 +46,15 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
   // Do I need to evaluate it here?
   result_mlx.eval();
 
-  mlx::convert::set_tensor_result(result_mlx, result);
+  mlx::convert::introduce_result(result_mlx, result);
 
-// 1. Ensure all operations are correctly implemented (write mlx evaluation tests)
-// 2. If it works, modify pytorch to not allocate a tensor beforehand for MLX. (register_dispatch_key.py -> create_out)
-// 3. Reduce operations overhead (creating mlx tensors)
-// 4. Only evaluate when needed. If I use MPS operations (try to avoid them), evaluate MLX and sync MPS.
-// 5. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
-// 6. Release
+// Just to remember: (register_dispatch_key.py -> create_out)
+
+// 1. Reduce operations overhead (creating mlx tensors)
+// 2. Only evaluate when needed. If I use MPS operations (try to avoid them), evaluate MLX and sync MPS.
+// 3. Ensure all operations are correctly implemented (write mlx evaluation tests)
+// 4. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
+// 5. Release
 }
 
 TORCH_IMPL_FUNC(addmm_out_mlx)
@@ -71,7 +72,7 @@ TORCH_IMPL_FUNC(addmm_out_mlx)
  float falpha = alpha.toFloat();
  ::mlx::core::array result_mlx = ::mlx::core::addmm(bias, input, weight, falpha, fbeta, ::mlx::core::Device::gpu);
  result_mlx.eval();
- mlx::convert::set_tensor_result(result_mlx, const_cast<Tensor&>(result));
+ mlx::convert::introduce_result(result_mlx, const_cast<Tensor&>(result));
 }
 // TODO: Put the following in another file
 
@@ -81,7 +82,7 @@ TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, con
   ::mlx::core::array result_mlx = ::mlx::core::bitwise_and(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
-  mlx::convert::set_tensor_result(result_mlx, output);
+  mlx::convert::introduce_result(result_mlx, output);
 }
 
 }

@@ -47,7 +47,7 @@ TORCH_IMPL_FUNC(lerp_scalar_mlx)(const Tensor& self, const Tensor& end, const Sc
   ::mlx::core::array out_mlx = ::mlx::core::add(start_mlx, mult);
 
   out_mlx.eval();
-  mlx::convert::set_tensor_result(out_mlx, out);
+  mlx::convert::introduce_result(out_mlx, out);
 }
 
 TORCH_IMPL_FUNC(div_out_mlx)(const Tensor& self, const Tensor& other, const Tensor& output) {
@@ -56,7 +56,7 @@ TORCH_IMPL_FUNC(div_out_mlx)(const Tensor& self, const Tensor& other, const Tens
   ::mlx::core::array result_mlx = ::mlx::core::divide(self_mlx, other_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
-  mlx::convert::set_tensor_result(result_mlx, output);
+  mlx::convert::introduce_result(result_mlx, output);
 }
 
 TORCH_IMPL_FUNC(add_out_mlx)(const Tensor& self, const Tensor& other, const Scalar& alpha, const Tensor& output) {
@@ -67,7 +67,7 @@ TORCH_IMPL_FUNC(add_out_mlx)(const Tensor& self, const Tensor& other, const Scal
   ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
   ::mlx::core::array result_mlx = ::mlx::core::add(self_mlx, mul, ::mlx::core::Device::gpu);
   result_mlx.eval();
-  mlx::convert::set_tensor_result(result_mlx, output);
+  mlx::convert::introduce_result(result_mlx, output);
 }
 
 }
