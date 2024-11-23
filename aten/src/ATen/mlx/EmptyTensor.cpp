@@ -149,12 +149,6 @@ TensorBase create_null_mlx(
       std::move(storage_impl), mlx_dks, dtype
       );
 
-  // I believe the following is not necessary
-//  if (stride.empty() && (size.size() != 1 || size[0] != 0)) {
-//    tensor.unsafeGetTensorImpl()->set_sizes_contiguous(size);
-//  } else if (!stride.empty()) {
-//    tensor.unsafeGetTensorImpl()->set_sizes_and_strides(size, stride);
-//  }
   return tensor;
 }
 

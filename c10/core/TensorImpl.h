@@ -29,6 +29,7 @@
 #include <c10/util/irange.h>
 #include <c10/util/safe_numerics.h>
 #include <c10/util/typeid.h>
+#include <mlx/array.h>
 #include <optional>
 
 #include <algorithm>
@@ -3043,6 +3044,9 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
       size_t cuda_version_major,
       size_t ptr_size>
   friend class C10_TensorImpl_Size_Check_Dummy_Class;
+
+ public:
+  ::mlx::core::array mlx_arr = {};
 };
 
 // Note [TensorImpl size constraints]
