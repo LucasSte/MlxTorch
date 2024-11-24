@@ -3046,7 +3046,11 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   friend class C10_TensorImpl_Size_Check_Dummy_Class;
 
  public:
-  ::mlx::core::array mlx_arr = {};
+  ::mlx::core::array mlx_arr;
+  void unsafe_update_mlx_storage();
+  void update_mlx_storage();
+  void update_mlx_sizes_and_strides();
+  void unsafe_mlx_update_sizes_and_strides(std::vector<int> mlx_shape);
 };
 
 // Note [TensorImpl size constraints]

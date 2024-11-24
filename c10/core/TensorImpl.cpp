@@ -61,6 +61,7 @@ static ::mlx::core::Dtype convert_scalar_type(const ScalarType t) {
   }
 }
 
+// TODO: These functions can be optimized
 static std::vector<int> calculate_size(TensorImpl *self) {
   auto self_sizes = self->sizes();
   std::vector<int> mlx_shape(self_sizes.size());
@@ -72,44 +73,49 @@ static std::vector<int> calculate_size(TensorImpl *self) {
   return mlx_shape;
 }
 
+void TensorImpl::unsafe_update_mlx_storage() {
+  std::vector<int> shape = calculate_size(this);
+  const at::DataPtr& data_ptr2 = this->storage().data_ptr();
 
+  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr2.get());
+  ctr_ptr->rc.fetch_add(1);
+  ::mlx::core::allocator::Buffer buf = {ctr_ptr->mtl_ptr};
+  ::mlx::core::Dtype mlx_type = convert_scalar_type(this->dtype().toScalarType());
 
-static void update_mlx_storage(TensorImpl *self) {
-  if (self->device() != at::kMLX)
-    return;
-//  std::vector<int> shape = calculate_size(self);
-//  const at::DataPtr& data_ptr2 = self->storage().data_ptr();
-//
-//  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr2.get());
-//  ctr_ptr->rc.fetch_add(1);
-//  ::mlx::core::allocator::Buffer buf = {ctr_ptr->mtl_ptr};
-//  ::mlx::core::Dtype mlx_type = convert_scalar_type(self->dtype().toScalarType());
-//
-//  self->mlx_arr = ::mlx::core::array(
-//      buf,
-//      shape,
-//      mlx_type,
-//      ::mlx::core::allocator::free
-//  );
+  this->mlx_arr = ::mlx::core::array(
+      buf,
+      shape,
+      mlx_type,
+      ::mlx::core::allocator::free
+  );
+  unsafe_mlx_update_sizes_and_strides(std::move(shape));
 }
 
-static void update_mlx_sizes_and_strides(TensorImpl *self) {
-  if (self->device() != at::kMLX)
+void TensorImpl::update_mlx_storage() {
+  if (this->device() != at::kMLX || this->mlx_arr.is_null())
+    return;
+  unsafe_update_mlx_storage();
+}
+
+void TensorImpl::unsafe_mlx_update_sizes_and_strides(std::vector<int> mlx_shape) {
+  auto self_strides = this->strides();
+  std::vector<size_t> mlx_strides(self_strides.size());
+  for (size_t i=0; i<self_strides.size(); i++) {
+    mlx_strides[i] = static_cast<size_t>(self_strides[i]);
+  }
+
+  this->mlx_arr = ::mlx::core::as_strided(std::move(this->mlx_arr), std::move(mlx_shape),
+                                          std::move(mlx_strides),
+                                          static_cast<size_t>(this->storage_offset()), ::mlx::core::Device::gpu);
+  this->mlx_arr.eval();
+}
+
+void TensorImpl::update_mlx_sizes_and_strides() {
+  if (this->device() != at::kMLX || this->mlx_arr.is_null())
     return;
 
-//  std::vector<int> mlx_shape = calculate_size(self);
-//
-//  auto self_strides = self->strides();
-//  std::vector<size_t> mlx_strides(self_strides.size());
-//  for (size_t i=0; i<self_strides.size(); i++) {
-//    mlx_strides[i] = static_cast<size_t>(self_strides[i]);
-//  }
-//
-//  self->mlx_arr = ::mlx::core::as_strided(self->mlx_arr, std::move(mlx_shape),
-//                                          std::move(mlx_strides),
-//                                          static_cast<size_t>(self->storage_offset()), ::mlx::core::Device::gpu);
-//
-//  self->mlx_arr.eval();
+  std::vector<int> mlx_shape = calculate_size(this);
+  unsafe_mlx_update_sizes_and_strides(std::move(mlx_shape));
 }
 
 const char* const TensorImpl::err_msg_tensor_metadata_change_not_allowed =
@@ -195,8 +201,7 @@ TensorImpl::TensorImpl(
       numel_(0),
       data_type_(data_type),
       device_opt_(storage_.device()),
-      key_set_(key_set - c10::python_ks),
-      mlx_arr({}){ // See [Note: Python key removal]
+      key_set_(key_set - c10::python_ks) { // See [Note: Python key removal]
   init_bitfields();
   // Inference tensor doesn't have version counter.
   if (!is_inference()) {
@@ -219,8 +224,7 @@ TensorImpl::TensorImpl(
     : storage_(std::move(storage)),
       numel_(0),
       data_type_(data_type),
-      device_opt_(device_opt),
-      mlx_arr({}){
+      device_opt_(device_opt) {
   init_bitfields();
 
   if (!key_set.empty()) {
@@ -364,7 +368,7 @@ void TensorImpl::release_resources() {
   autograd_meta_.reset();
   if (storage_) {
     storage_ = {};
-    mlx_arr = {};
+    mlx_arr = ::mlx::core::array();
   }
   pyobj_slot_.maybe_destroy_pyobj();
 }
@@ -675,7 +679,7 @@ void TensorImpl::copy_generic_tensor_metadata(
   dest_impl->refresh_sizes_strides_policy();
   dest_impl->refresh_layout_policy();
   dest_impl->refresh_device_policy();
-  update_mlx_sizes_and_strides(dest_impl);
+  dest_impl->update_mlx_sizes_and_strides();
 }
 
 void TensorImpl::copy_tensor_metadata_except_version_counter(
@@ -743,14 +747,14 @@ void TensorImpl::Extend(int64_t num, float growthPct) {
   newDims[0] += num;
   if (!storage_.data()) {
     Resize(newDims);
-    update_mlx_sizes_and_strides(this);
+    update_mlx_sizes_and_strides();
     return;
   }
   const auto newNumel = c10::multiply_integers(newDims.begin(), newDims.end());
   if (newNumel * data_type_.itemsize() <= storage_.nbytes()) {
     sizes_and_strides_.set_sizes(newDims);
     numel_ = newNumel;
-    update_mlx_sizes_and_strides(this);
+    update_mlx_sizes_and_strides();
     return;
   }
   SizesVector newCapacity(sizes_and_strides.begin(), sizes_and_strides.end());
@@ -788,8 +792,7 @@ void TensorImpl::Extend(int64_t num, float growthPct) {
   reserved_ = true;
   sizes_and_strides_.set_sizes(newDims);
   numel_ = newNumel;
-  update_mlx_storage(this);
-  update_mlx_sizes_and_strides(this);
+  update_mlx_storage();
 }
 
 void TensorImpl::ReserveSpace(int64_t outer_dim) {
@@ -821,7 +824,7 @@ void TensorImpl::ReserveSpace(int64_t outer_dim) {
   sizes_and_strides_.set_sizes(oldDims);
   numel_ = oldSize;
   reserved_ = true;
-  update_mlx_sizes_and_strides(this);
+  update_mlx_sizes_and_strides();
 }
 
 void TensorImpl::Reshape(const std::vector<int64_t>& dims) {
@@ -848,8 +851,7 @@ void TensorImpl::Reshape(const std::vector<int64_t>& dims) {
       "to change corresponding code from Reshape to Resize.");
   sizes_and_strides_.set_sizes(dims);
   empty_tensor_restride(MemoryFormat::Contiguous);
-  update_mlx_storage(this);
-  update_mlx_sizes_and_strides(this);
+  update_mlx_storage();
 }
 
 void TensorImpl::FreeMemory() {
@@ -861,7 +863,7 @@ void TensorImpl::FreeMemory() {
     storage_.reset_legacy();
   }
   storage_offset_ = 0;
-  mlx_arr = {};
+  mlx_arr = ::mlx::core::array();
 }
 
 void TensorImpl::ShareData(const TensorImpl& src) {
@@ -986,7 +988,7 @@ void TensorImpl::set_sizes_and_strides(
     set_sizes_and_strides(*int_sizes, *int_strides);
     if (storage_offset.has_value())
       set_storage_offset(storage_offset->as_int_unchecked());
-    update_mlx_sizes_and_strides(this);
+    update_mlx_sizes_and_strides();
     return;
   }
   TORCH_CHECK(
@@ -1014,14 +1016,14 @@ void TensorImpl::set_sizes_and_strides(
 
   refresh_numel();
   refresh_contiguous();
-  update_mlx_sizes_and_strides(this);
+  update_mlx_sizes_and_strides();
 }
 
 void TensorImpl::generic_set_sizes_contiguous(SymIntArrayRef sizes) {
   auto int_sizes = asIntArrayRefSlowOpt(sizes);
   if (int_sizes.has_value()) {
     set_sizes_contiguous(*int_sizes);
-    update_mlx_sizes_and_strides(this);
+    update_mlx_sizes_and_strides();
     return;
   }
 
@@ -1043,7 +1045,7 @@ void TensorImpl::generic_set_sizes_contiguous(SymIntArrayRef sizes) {
   refresh_numel();
   empty_tensor_restride_symint(
       MemoryFormat::Contiguous); // calls refresh_contiguous()
-  update_mlx_sizes_and_strides(this);
+  update_mlx_sizes_and_strides();
 }
 
 void TensorImpl::empty_tensor_restride_symint(MemoryFormat memory_format) {
@@ -1113,7 +1115,7 @@ void TensorImpl::empty_tensor_restride_symint(MemoryFormat memory_format) {
     default:
       break;
   }
-  update_mlx_sizes_and_strides(this);
+  update_mlx_sizes_and_strides();
 }
 
 namespace impl {

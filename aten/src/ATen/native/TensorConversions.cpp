@@ -6,6 +6,7 @@
 #include <ATen/core/Tensor.h>
 #include <ATen/quantized/Quantizer.h>
 #include <optional>
+#include <ATen/native/mlx/Convert.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -148,7 +149,9 @@ static Tensor cpu_to_mlx(const Tensor &self) {
   auto tensor = at::detail::make_tensor_base<TensorImpl>(
       std::move(storage_impl), mlx_dks, mlx_dtype
   );
-  tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
+  TensorImpl * TImpl = tensor.unsafeGetTensorImpl();
+  TImpl->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
+  TImpl->unsafe_update_mlx_storage();
   return tensor;
 }
 
