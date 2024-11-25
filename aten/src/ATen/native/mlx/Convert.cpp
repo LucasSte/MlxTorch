@@ -114,6 +114,16 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   return mlx_res;
 }
 
+::mlx::core::array& retrieve_array(const Tensor& self) {
+  TensorImpl * impl = self.unsafeGetTensorImpl();
+  ::mlx::core::array * arr = &impl->mlx_arr;
+  if (arr->is_null()) {
+    *arr = tensor_to_mlx(self);
+    return *arr;
+  }
+  return *arr;
+}
+
 Tensor new_from_mlx(const ::mlx::core::array & input) {
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
   // What about using the Data shared ptr for memory management?

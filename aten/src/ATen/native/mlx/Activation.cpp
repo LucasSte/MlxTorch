@@ -15,7 +15,7 @@
 
 namespace at::native {
 Tensor relu_mlx(const Tensor& self) {
-  ::mlx::core::array array = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array& array = mlx::convert::retrieve_array(self);
   ::mlx::core::array zero = ::mlx::core::array(0.0, mlx::convert::convert_type(self));
   ::mlx::core::array result = ::mlx::core::maximum(array, zero, ::mlx::core::Device::gpu);
   result.eval();
@@ -24,7 +24,7 @@ Tensor relu_mlx(const Tensor& self) {
 }
 
 TORCH_IMPL_FUNC(sigmoid_out_mlx)(const Tensor& self, const Tensor& output) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
   ::mlx::core::array result_mlx = ::mlx::core::sigmoid(self_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
@@ -36,8 +36,8 @@ TORCH_IMPL_FUNC(sigmoid_backward_out_mlx)(const Tensor &grad_output, const Tenso
     return;
   }
 
-  ::mlx::core::array output_mlx = mlx::convert::tensor_to_mlx(output);
-  ::mlx::core::array grad_output_mlx = mlx::convert::tensor_to_mlx(grad_output);
+  ::mlx::core::array& output_mlx = mlx::convert::retrieve_array(output);
+  ::mlx::core::array& grad_output_mlx = mlx::convert::retrieve_array(grad_output);
   ::mlx::core::array unit_arr = ::mlx::core::array(1.0, mlx::convert::convert_type(grad_output));
   ::mlx::core::array one_minus_sigmoid = ::mlx::core::subtract(unit_arr, output_mlx, ::mlx::core::Device::gpu);
   ::mlx::core::array times_tensor = ::mlx::core::multiply(one_minus_sigmoid, output_mlx, ::mlx::core::Device::gpu);
@@ -52,8 +52,8 @@ TORCH_IMPL_FUNC(threshold_backward_out_mlx)
 (const Tensor &grad, const Tensor& self, const Scalar& threshold, const Tensor& gradInput) {
 
 
-  ::mlx::core::array input_tensor = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array grad_tensor = mlx::convert::tensor_to_mlx(grad);
+  ::mlx::core::array& input_tensor = mlx::convert::retrieve_array(self);
+  ::mlx::core::array& grad_tensor = mlx::convert::retrieve_array(grad);
   ::mlx::core::Dtype mlx_type = mlx::convert::convert_type(self);
   ::mlx::core::array threshold_tensor = mlx::convert::scalar_to_mlx(threshold);
   ::mlx::core::array zero_tensor = ::mlx::core::array(0.0, mlx_type);

@@ -21,13 +21,13 @@ TORCH_IMPL_FUNC(addcmul_out_mlx)
  const Scalar& value,
  const Tensor& output) {
 
-  ::mlx::core::array t1 = mlx::convert::tensor_to_mlx(tensor1);
-  ::mlx::core::array t2 = mlx::convert::tensor_to_mlx(tensor2);
+  ::mlx::core::array& t1 = mlx::convert::retrieve_array(tensor1);
+  ::mlx::core::array& t2 = mlx::convert::retrieve_array(tensor2);
   ::mlx::core::array val = mlx::convert::scalar_to_mlx(value);
 
   ::mlx::core::array mul1 = ::mlx::core::multiply(t1, t2, ::mlx::core::Device::gpu);
   ::mlx::core::array mul2 = ::mlx::core::multiply(val, mul1, ::mlx::core::Device::gpu);
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
 
   ::mlx::core::array result_mlx = ::mlx::core::add(self_mlx, mul2, ::mlx::core::Device::gpu);
   result_mlx.eval();
@@ -41,13 +41,13 @@ TORCH_IMPL_FUNC(addcdiv_out_mlx)
  const Tensor& tensor2,
  const Scalar& value,
  const Tensor& output) {
-  ::mlx::core::array t1 = mlx::convert::tensor_to_mlx(tensor1);
-  ::mlx::core::array t2 = mlx::convert::tensor_to_mlx(tensor2);
+  ::mlx::core::array& t1 = mlx::convert::retrieve_array(tensor1);
+  ::mlx::core::array& t2 = mlx::convert::retrieve_array(tensor2);
   ::mlx::core::array val = mlx::convert::scalar_to_mlx(value);
 
   ::mlx::core::array div = ::mlx::core::divide(t1, t2, ::mlx::core::Device::gpu);
   ::mlx::core::array mul = ::mlx::core::multiply(val, div, ::mlx::core::Device::gpu);
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
 
   ::mlx::core::array result_mlx = ::mlx::core::add(self_mlx, mul, ::mlx::core::Device::gpu);
   result_mlx.eval();

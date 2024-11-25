@@ -27,8 +27,8 @@ TORCH_IMPL_FUNC(mm_out_mlx)(const Tensor & self, const Tensor & mat2, const Tens
 }
 
 TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
+  ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
   ::mlx::core::array result_mlx = ::mlx::core::multiply(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 
@@ -39,8 +39,8 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
     void mm_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
   // Ensure both tensors are in MLX or CPU!
 
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
+  ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
 
   ::mlx::core::array result_mlx = ::mlx::core::matmul(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   // Do I need to evaluate it here?
@@ -64,9 +64,9 @@ TORCH_IMPL_FUNC(addmm_out_mlx)
  const Scalar& beta,
  const Scalar& alpha,
  const Tensor& result) {
- ::mlx::core::array bias = mlx::convert::tensor_to_mlx(self);
- ::mlx::core::array input = mlx::convert::tensor_to_mlx(mat1);
- ::mlx::core::array weight = mlx::convert::tensor_to_mlx(mat2);
+ ::mlx::core::array& bias = mlx::convert::retrieve_array(self);
+ ::mlx::core::array& input = mlx::convert::retrieve_array(mat1);
+ ::mlx::core::array& weight = mlx::convert::retrieve_array(mat2);
 
  float fbeta = beta.toFloat();
  float falpha = alpha.toFloat();
@@ -77,8 +77,8 @@ TORCH_IMPL_FUNC(addmm_out_mlx)
 // TODO: Put the following in another file
 
 TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
+  ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
   ::mlx::core::array result_mlx = ::mlx::core::bitwise_and(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
 

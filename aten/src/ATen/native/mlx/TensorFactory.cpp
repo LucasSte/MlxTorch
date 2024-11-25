@@ -84,11 +84,12 @@ inline TensorImpl * resize_impl_mlx_(
 
 Tensor& set_storage_mlx_(Tensor& result, Storage storage, int64_t storage_offset, IntArrayRef size, IntArrayRef stride) {
   checkSetStorage(result, std::move(storage), storage_offset, size, stride);
-  //std::cout << "set storage_mps " << storage_offset << " stride " << stride << std::endl;
   result.unsafeGetTensorImpl()->set_storage_offset(storage_offset);
   std::optional<IntArrayRef> stride_opt = stride.data() != nullptr ?
                                                                    std::optional<IntArrayRef>(stride) : std::nullopt;
   resize_impl_mlx_(result.unsafeGetTensorImpl(), size, stride_opt);
+  // TODO: I need to update the array afterwards
+  // TODO: I'll probably need to sync here
   return result;
 }
 

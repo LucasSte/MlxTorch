@@ -16,8 +16,8 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
   c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
   const Tensor &weight = *weight_maybe_owned;
 
-  ::mlx::core::array mlx_input = mlx::convert::tensor_to_mlx(input);
-  ::mlx::core::array mlx_targets = mlx::convert::tensor_to_mlx(target);
+  ::mlx::core::array& mlx_input = mlx::convert::retrieve_array(input);
+  ::mlx::core::array& mlx_targets = mlx::convert::retrieve_array(target);
 
   ::mlx::core::array loged = ::mlx::core::log(mlx_input, ::mlx::core::Device::gpu);
   ::mlx::core::array log_inputs_clip = ::mlx::core::clip(loged, ::mlx::core::array(-100.0, mlx::convert::convert_type(input)), std::nullopt, ::mlx::core::Device::gpu);
@@ -33,7 +33,7 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
   ::mlx::core::array loss = ::mlx::core::negative(not_loss, ::mlx::core::Device::gpu);
 
   if (weight.defined()) {
-    ::mlx::core::array weights = mlx::convert::tensor_to_mlx(weight);
+    ::mlx::core::array& weights = mlx::convert::retrieve_array(weight);
     loss = ::mlx::core::multiply(loss, weights, ::mlx::core::Device::gpu);
   }
 
@@ -69,9 +69,9 @@ Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
   const Tensor &weight = *weight_maybe_owned;
 
   // d(L)/d(y) = -w (x - y) / (y - y^2)
-  ::mlx::core::array input_mlx = mlx::convert::tensor_to_mlx(input);
-  ::mlx::core::array target_mlx = mlx::convert::tensor_to_mlx(target);
-  ::mlx::core::array grad_mlx = mlx::convert::tensor_to_mlx(grad_output);
+  ::mlx::core::array& input_mlx = mlx::convert::retrieve_array(input);
+  ::mlx::core::array& target_mlx = mlx::convert::retrieve_array(target);
+  ::mlx::core::array& grad_mlx = mlx::convert::retrieve_array(grad_output);
 
   ::mlx::core::array epsilon = ::mlx::core::array(1e-12, mlx::convert::convert_type(input));
   // 1 - y
@@ -88,7 +88,7 @@ Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
   ::mlx::core::array bce_loss = ::mlx::core::multiply(grad_mlx, division, ::mlx::core::Device::gpu);
 
   if (weight.defined()) {
-    ::mlx::core::array weight_mlx = mlx::convert::tensor_to_mlx(weight);
+    ::mlx::core::array& weight_mlx = mlx::convert::retrieve_array(weight);
     bce_loss = ::mlx::core::multiply(bce_loss, weight_mlx, ::mlx::core::Device::gpu);
   }
 

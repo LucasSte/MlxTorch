@@ -130,7 +130,6 @@ TensorBase create_null_mlx(
     IntArrayRef size,
     IntArrayRef stride,
     const TensorOptions &options) {
-//  std::cout << "Calling create null" << std::endl;
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
   DataPtr null_ptr(nullptr, nullptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
   c10::SymInt size_bytes(0);

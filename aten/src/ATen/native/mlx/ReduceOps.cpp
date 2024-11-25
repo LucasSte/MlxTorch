@@ -24,7 +24,7 @@ TORCH_IMPL_FUNC(sum_out_mlx)
  bool keepdim,
  std::optional<ScalarType> dtype,
  const Tensor &output_t) {
-  ::mlx::core::array input_mlx = mlx::convert::tensor_to_mlx(input);
+  ::mlx::core::array& input_mlx = mlx::convert::retrieve_array(input);
   if (dtype && *dtype != input.dtype()) {
     ::mlx::core::Dtype new_type = mlx::convert::convert_scalar_type(*dtype);
     input_mlx = ::mlx::core::astype(input_mlx, new_type, ::mlx::core::Device::gpu);
@@ -52,7 +52,7 @@ TORCH_IMPL_FUNC(mean_out_mlx)
  bool keepdim,
  std::optional<ScalarType> dtype,
  const Tensor& output_t) {
-  ::mlx::core::array input_mlx = mlx::convert::tensor_to_mlx(input_t);
+  ::mlx::core::array& input_mlx = mlx::convert::retrieve_array(input_t);
   if (dtype && *dtype != input_t.dtype()) {
     ::mlx::core::Dtype new_type = mlx::convert::convert_scalar_type(*dtype);
     input_mlx = ::mlx::core::astype(input_mlx, new_type, ::mlx::core::Device::gpu);

@@ -28,7 +28,7 @@ inline bool is_dense_in_storage(const TensorBase& t) {
 }
 
 static Tensor copy_mlx(const Tensor &src, const Tensor &dst, bool sameType) {
-  ::mlx::core::array src_mlx = mlx::convert::tensor_to_mlx(src);
+  ::mlx::core::array& src_mlx = mlx::convert::retrieve_array(src);
   if (!sameType) {
     src_mlx = ::mlx::core::astype(src_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
   }
@@ -58,6 +58,8 @@ static void copy_to_mlx_from_external(Tensor &dst, const Tensor &src) {
   const at::DataPtr& data_ptr = dst.storage().data_ptr();
   void* dst_str = static_cast<char*>(data_ptr.get()) + dst_byte_offset;
   std::memcpy(dst_str, host_src, size_to_copy);
+  TensorImpl * TImpl = dst.unsafeGetTensorImpl();
+  TImpl->unsafe_update_mlx_storage();
 }
 
 static Tensor copy_from_non_mlx(const Tensor &src_, const Tensor &dst_) {
@@ -130,12 +132,14 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
       casted.eval();
       mlx::convert::introduce_result(res_mlx, res);
     }
+    TensorImpl * TImpl = res.unsafeGetTensorImpl();
+    TImpl->unsafe_update_mlx_storage();
     return res;
   }
 
   if (self.device().type() == at::kMLX && dst.device().type() == kCPU) {
     if (!sameDataType) {
-      ::mlx::core::array res_mlx = mlx::convert::tensor_to_mlx(self);
+      ::mlx::core::array res_mlx = mlx::convert::retrieve_array(self);
       ::mlx::core::array casted = ::mlx::core::astype(res_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
       casted.eval();
       mlx::convert::introduce_result(res_mlx, dst);

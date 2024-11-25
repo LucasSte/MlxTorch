@@ -51,8 +51,8 @@ TORCH_IMPL_FUNC(ne_tensor_out_mlx)(const Tensor & self, const Tensor & mat2, con
 }
 
 void eq_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
+  ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
 
   auto sizes = self.sizes();
   ::mlx::core::array result_mlx = ::mlx::core::equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
@@ -62,8 +62,8 @@ void eq_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
 }
 
 void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
-  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
+  ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
 
   ::mlx::core::array result_mlx = ::mlx::core::not_equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
@@ -71,7 +71,7 @@ void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
 }
 
 Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
-  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
 
   ::mlx::core::array result_mlx = ::mlx::core::abs(self_mlx, ::mlx::core::Device::gpu);
   result_mlx.eval();
