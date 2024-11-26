@@ -18,7 +18,7 @@ Tensor & fill_scalar_mlx(Tensor &self, const Scalar &value) {
     mlx_shape[i] = static_cast<int>(self_sizes[i]);
   }
 
-  ::mlx::core::array result = {};
+  ::mlx::core::array result;
   if (value.isFloatingPoint()) {
     float32_t val = value.toFloat();
     result = ::mlx::core::full(std::move(mlx_shape), val, ::mlx::core::float32);
@@ -35,8 +35,7 @@ Tensor & fill_scalar_mlx(Tensor &self, const Scalar &value) {
     result = ::mlx::core::full(std::move(mlx_shape), val, ::mlx::core::uint64);
   }
 
-  result.eval();
-  mlx::convert::introduce_result(result, self);
+  mlx::convert::introduce_result(std::move(result), self);
   return self;
 }
 

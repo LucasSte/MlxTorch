@@ -124,7 +124,8 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   return *arr;
 }
 
-Tensor new_from_mlx(const ::mlx::core::array & input) {
+Tensor new_from_mlx(::mlx::core::array input) {
+  input.eval();
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
   // What about using the Data shared ptr for memory management?
   void * raw_ptr = input.data_shared_ptr()->buffer.raw_ptr();
@@ -168,7 +169,9 @@ Tensor new_from_mlx(const ::mlx::core::array & input) {
     tensor_offset = static_cast<int64_t>(bytes_offset / tensor.dtype().itemsize());
   }
 
-  tensor.unsafeGetTensorImpl()->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
+  TensorImpl * TImpl = tensor.unsafeGetTensorImpl();
+  TImpl->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
+  TImpl->mlx_arr = std::move(input);
   return tensor;
 }
 
@@ -194,7 +197,8 @@ Tensor new_from_mlx(const ::mlx::core::array & input) {
   }
 }
 
-void introduce_result(const ::mlx::core::array& mlx_result, const Tensor& tensor_result) {
+void introduce_result(::mlx::core::array mlx_result, const Tensor& tensor_result) {
+  mlx_result.eval();
   auto data_ptr = mlx_result.data_shared_ptr();
   Allocator *allocator = at::mlx::getMLXAllocator();
   ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());
@@ -227,7 +231,9 @@ void introduce_result(const ::mlx::core::array& mlx_result, const Tensor& tensor
     storage_offset = static_cast<int64_t>(bytes_offset / tensor_result.dtype().itemsize());
   }
 
-  tensor_result.unsafeGetTensorImpl()->set_sizes_and_strides(sizes_ref, strides_ref, storage_offset);
+  TensorImpl * TImpl = tensor_result.unsafeGetTensorImpl();
+  TImpl->set_sizes_and_strides(sizes_ref, strides_ref, storage_offset);
+  TImpl->mlx_arr = std::move(mlx_result);
   tensor_result.storage().unsafeGetStorageImpl()->set_resizable(true);
 }
 }

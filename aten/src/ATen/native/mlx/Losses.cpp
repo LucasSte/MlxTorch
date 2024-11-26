@@ -40,17 +40,14 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
   switch (reduction) {
     case Reduction::Mean: {
       ::mlx::core::array res = ::mlx::core::mean(loss, ::mlx::core::Device::gpu);
-      res.eval();
-      return mlx::convert::new_from_mlx(res);
+      return mlx::convert::new_from_mlx(std::move(res));
     }
     case Reduction::Sum: {
     ::mlx::core::array res = ::mlx::core::sum(loss, ::mlx::core::Device::gpu);
-    res.eval();
-    return mlx::convert::new_from_mlx(res);
+    return mlx::convert::new_from_mlx(std::move(res));
     }
     case Reduction::None: {
-      loss.eval();
-      return mlx::convert::new_from_mlx(loss);
+      return mlx::convert::new_from_mlx(std::move(loss));
     }
     default:
       TORCH_INTERNAL_ASSERT(false, "Invalid case!");
@@ -97,9 +94,8 @@ Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
     bce_loss = ::mlx::core::divide(bce_loss, numel, ::mlx::core::Device::gpu);
   }
 
-  bce_loss.eval();
 
-  return mlx::convert::new_from_mlx(bce_loss);
+  return mlx::convert::new_from_mlx(std::move(bce_loss));
 }
 
 }

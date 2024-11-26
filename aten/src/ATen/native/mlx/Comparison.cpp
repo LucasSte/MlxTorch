@@ -39,10 +39,6 @@ static Tensor wrapped_scalar_tensor_mlx(const Scalar& scalar, const Device devic
 
 TORCH_IMPL_FUNC(ne_scalar_out_mlx)(const Tensor & self, const Scalar & other, const Tensor & result) {
   Tensor mat2 = wrapped_scalar_tensor_mlx(other, DeviceType::MLX);
-
-  auto sizes = self.sizes();
-  for (uint64_t item: sizes) {
-  }
   ne_out_mlx_impl(self, mat2, result);
 }
 
@@ -54,11 +50,9 @@ void eq_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
   ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
   ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
 
-  auto sizes = self.sizes();
   ::mlx::core::array result_mlx = ::mlx::core::equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
-  result_mlx.eval();
-  auto out_sizes = result.sizes();
-  mlx::convert::introduce_result(result_mlx, result);
+
+  mlx::convert::introduce_result(std::move(result_mlx), result);
 }
 
 void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
@@ -66,16 +60,16 @@ void ne_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & re
   ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
 
   ::mlx::core::array result_mlx = ::mlx::core::not_equal(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
-  result_mlx.eval();
-  mlx::convert::introduce_result(result_mlx, result);
+
+  mlx::convert::introduce_result(std::move(result_mlx), result);
 }
 
 Tensor & abs_out_mlx(const Tensor & self, Tensor & output) {
   ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
 
   ::mlx::core::array result_mlx = ::mlx::core::abs(self_mlx, ::mlx::core::Device::gpu);
-  result_mlx.eval();
-  mlx::convert::introduce_result(result_mlx, output);
+
+  mlx::convert::introduce_result(std::move(result_mlx), output);
 
   if (!output.is_same_size(self)) {
     // TODO: Set storage size nbytes here!

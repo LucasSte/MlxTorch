@@ -10,6 +10,6 @@ namespace at::native::mlx::convert {
 ::mlx::core::array tensor_to_mlx(const Tensor& self);
 ::mlx::core::array scalar_to_mlx(const Scalar& scalar);
 ::mlx::core::array& retrieve_array(const Tensor& self);
-void introduce_result(const ::mlx::core::array& mlx_result, const Tensor& tensor_result);
-Tensor new_from_mlx(const ::mlx::core::array& input);
+void introduce_result(::mlx::core::array mlx_result, const Tensor& tensor_result);
+Tensor new_from_mlx(::mlx::core::array input);
 }

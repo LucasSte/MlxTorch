@@ -30,7 +30,7 @@ TORCH_IMPL_FUNC(sum_out_mlx)
     input_mlx = ::mlx::core::astype(input_mlx, new_type, ::mlx::core::Device::gpu);
   }
 
-  ::mlx::core::array result = {};
+  ::mlx::core::array result;
   if (opt_dim.has_value()) {
     IntArrayRef dim_ref = opt_dim.value();
     std::vector<int> dims(dim_ref.size());
@@ -42,8 +42,7 @@ TORCH_IMPL_FUNC(sum_out_mlx)
     result = ::mlx::core::sum(input_mlx, keepdim, ::mlx::core::Device::gpu);
   }
 
-  result.eval();
-  mlx::convert::introduce_result(result, output_t);
+  mlx::convert::introduce_result(std::move(result), output_t);
 }
 
 TORCH_IMPL_FUNC(mean_out_mlx)
@@ -58,8 +57,7 @@ TORCH_IMPL_FUNC(mean_out_mlx)
     input_mlx = ::mlx::core::astype(input_mlx, new_type, ::mlx::core::Device::gpu);
   }
 
-  ::mlx::core::array result_mlx = {};
-  ::mlx::core::array result = {};
+  ::mlx::core::array result;
   if (opt_dim.has_value() && !opt_dim.value().empty()) {
     IntArrayRef dim_ref = opt_dim.value();
     std::vector<int> dims(dim_ref.size());
@@ -71,8 +69,7 @@ TORCH_IMPL_FUNC(mean_out_mlx)
     result = ::mlx::core::mean(input_mlx, keepdim, ::mlx::core::Device::gpu);
   }
 
-  result.eval();
-  mlx::convert::introduce_result(result, output_t);
+  mlx::convert::introduce_result(std::move(result), output_t);
 }
 
 }

@@ -30,9 +30,8 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
   ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
   ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
   ::mlx::core::array result_mlx = ::mlx::core::multiply(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
-  result_mlx.eval();
 
-  mlx::convert::introduce_result(result_mlx, output);
+  mlx::convert::introduce_result(std::move(result_mlx), output);
 }
 
 
@@ -43,10 +42,8 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
   ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
 
   ::mlx::core::array result_mlx = ::mlx::core::matmul(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
-  // Do I need to evaluate it here?
-  result_mlx.eval();
 
-  mlx::convert::introduce_result(result_mlx, result);
+  mlx::convert::introduce_result(std::move(result_mlx), result);
 
 // Just to remember: (register_dispatch_key.py -> create_out)
 
@@ -71,8 +68,7 @@ TORCH_IMPL_FUNC(addmm_out_mlx)
  float fbeta = beta.toFloat();
  float falpha = alpha.toFloat();
  ::mlx::core::array result_mlx = ::mlx::core::addmm(bias, input, weight, falpha, fbeta, ::mlx::core::Device::gpu);
- result_mlx.eval();
- mlx::convert::introduce_result(result_mlx, const_cast<Tensor&>(result));
+ mlx::convert::introduce_result(std::move(result_mlx), const_cast<Tensor&>(result));
 }
 // TODO: Put the following in another file
 
@@ -80,9 +76,8 @@ TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, con
   ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
   ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
   ::mlx::core::array result_mlx = ::mlx::core::bitwise_and(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
-  result_mlx.eval();
 
-  mlx::convert::introduce_result(result_mlx, output);
+  mlx::convert::introduce_result(std::move(result_mlx), output);
 }
 
 }
