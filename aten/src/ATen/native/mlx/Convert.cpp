@@ -118,6 +118,7 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   TensorImpl * impl = self.unsafeGetTensorImpl();
   ::mlx::core::array * arr = &impl->mlx_arr;
   if (arr->is_null()) {
+    // TODO: Define another way to check if it has been initialized
     *arr = tensor_to_mlx(self);
     return *arr;
   }
