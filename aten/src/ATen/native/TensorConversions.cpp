@@ -406,27 +406,52 @@ Tensor _to_copy(
               }
             } else if(self.device().type() == at::DeviceType::MLX && device->type() == at::DeviceType::CPU) {
               // std::cout << "I am passing from mlx to cpu" << std::endl;
-              caffe2::TypeMeta mlx_dtype = self.dtype();
-              auto size_bytes = self.storage().sym_nbytes();
-              const at::DataPtr& data_ptr = self.storage().data_ptr();
-
-              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
-              ctr_ptr->rc.fetch_add(1);
-
+              // TODO: I'm assuming the type doesn't change
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
-              DataPtr mlx_ptr(data_ptr.get(), data_ptr.get(), mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1), true);
+              TensorImpl * SelfImpl = self.unsafeGetTensorImpl();
+              void * raw_ptr = SelfImpl->mlx_arr.data_shared_ptr()->buffer.raw_ptr();
+              ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(raw_ptr);
+              ctr_ptr->rc.fetch_add(1);
+              size_t size_bytes = ::mlx::core::allocator::MemControl::usable_size(::mlx::core::allocator::Buffer(ctr_ptr->mtl_ptr));
+              auto sym_int = SymInt(static_cast<int64_t>(size_bytes));
+
+              DataPtr data_ptr(raw_ptr, raw_ptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::CPU, -1));
               auto storage_impl = c10::make_intrusive<StorageImpl>(
                   c10::StorageImpl::use_byte_size_t(),
-                  size_bytes,
-                  std::move(mlx_ptr),
+                  sym_int,
+                  std::move(data_ptr),
                   mlx_allocator,
                   true
               );
-              constexpr c10::DispatchKeySet cpu_dks(c10::DispatchKey::CPU);
+              constexpr c10::DispatchKeySet mlx_dks(c10::DispatchKey::CPU);
+              ScalarType tensor_type = self.dtype().toScalarType();
+              caffe2::TypeMeta type = caffe2::TypeMeta::fromScalarType(tensor_type);
               auto tensor = at::detail::make_tensor_base<TensorImpl>(
-                  std::move(storage_impl), cpu_dks, mlx_dtype
+                  std::move(storage_impl), mlx_dks, type
               );
-              tensor.unsafeGetTensorImpl()->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
+
+              auto mlx_shape = SelfImpl->mlx_arr.shape();
+              std::vector<int64_t> ref(mlx_shape.size());
+              for(size_t i=0; i<mlx_shape.size(); i++) {
+                ref[i] = static_cast<int64_t>(mlx_shape[i]);
+              }
+              auto shape_ref = ArrayRef(ref);
+
+              auto mlx_strides = SelfImpl->mlx_arr.strides();
+              std::vector<int64_t> ref2(mlx_strides.size());
+              for(size_t i=0; i<mlx_strides.size(); i++) {
+                ref2[i] = static_cast<int64_t>(mlx_strides[i]);
+              }
+              auto strides_ref = ArrayRef(ref2);
+
+              size_t bytes_offset = SelfImpl->mlx_arr.storage_offset();
+              std::optional<int64_t> tensor_offset = std::nullopt;
+              if (bytes_offset > 0) {
+                tensor_offset = static_cast<int64_t>(bytes_offset / tensor.dtype().itemsize());
+              }
+
+              TensorImpl * TImpl = tensor.unsafeGetTensorImpl();
+              TImpl->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
               return tensor;
             }
           }

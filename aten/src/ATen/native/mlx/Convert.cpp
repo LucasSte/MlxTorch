@@ -46,7 +46,7 @@ namespace at::native::mlx::convert {
   }
 }
 
-static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
+ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   switch (arr.dtype().val()) {
     case ::mlx::core::Dtype::Val::uint8:
       return ScalarType::Byte;
@@ -125,6 +125,55 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   return *arr;
 }
 
+Tensor new_from_mlx_only(::mlx::core::array input) {
+  input.eval();
+  at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
+  // What about using the Data shared ptr for memory management?
+  auto sym_int = SymInt(0);
+
+  DataPtr data_ptr(nullptr, nullptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
+  auto storage_impl = c10::make_intrusive<StorageImpl>(
+      c10::StorageImpl::use_byte_size_t(),
+      sym_int,
+      std::move(data_ptr),
+      mlx_allocator,
+      true
+  );
+  constexpr c10::DispatchKeySet mlx_dks(c10::DispatchKey::MLX);
+  ScalarType tensor_type = to_tensor_type(input);
+  caffe2::TypeMeta type = caffe2::TypeMeta::fromScalarType(tensor_type);
+  auto tensor = at::detail::make_tensor_base<TensorImpl>(
+      std::move(storage_impl), mlx_dks, type
+  );
+
+  // TODO: I believe this part (and maybe the entire function is still necessary)
+  // TODO: Test introduce_mlx_only by first!
+//  auto mlx_shape = input.shape();
+//  std::vector<int64_t> ref(mlx_shape.size());
+//  for(size_t i=0; i<mlx_shape.size(); i++) {
+//    ref[i] = static_cast<int64_t>(mlx_shape[i]);
+//  }
+//  auto shape_ref = ArrayRef(ref);
+//
+//  auto mlx_strides = input.strides();
+//  std::vector<int64_t> ref2(mlx_strides.size());
+//  for(size_t i=0; i<mlx_strides.size(); i++) {
+//    ref2[i] = static_cast<int64_t>(mlx_strides[i]);
+//  }
+//  auto strides_ref = ArrayRef(ref2);
+//
+//  size_t bytes_offset = input.storage_offset();
+//  std::optional<int64_t> tensor_offset = std::nullopt;
+//  if (bytes_offset > 0) {
+//    tensor_offset = static_cast<int64_t>(bytes_offset / tensor.dtype().itemsize());
+//  }
+
+  TensorImpl * TImpl = tensor.unsafeGetTensorImpl();
+  // TImpl->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
+  TImpl->mlx_arr = std::move(input);
+  return tensor;
+}
+
 Tensor new_from_mlx(::mlx::core::array input) {
   input.eval();
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
@@ -196,6 +245,12 @@ Tensor new_from_mlx(::mlx::core::array input) {
     default:
       throw std::runtime_error("Unknown scalar type MLX.");
   }
+}
+
+void introduce_mlx_only(::mlx::core::array mlx_result, const Tensor& tensor_result) {
+  mlx_result.eval();
+  TensorImpl * TImpl = tensor_result.unsafeGetTensorImpl();
+  TImpl->mlx_arr = std::move(mlx_result);
 }
 
 void introduce_result(::mlx::core::array mlx_result, const Tensor& tensor_result) {

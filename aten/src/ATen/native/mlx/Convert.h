@@ -11,5 +11,8 @@ namespace at::native::mlx::convert {
 ::mlx::core::array scalar_to_mlx(const Scalar& scalar);
 ::mlx::core::array& retrieve_array(const Tensor& self);
 void introduce_result(::mlx::core::array mlx_result, const Tensor& tensor_result);
+void introduce_mlx_only(::mlx::core::array mlx_result, const Tensor& tensor_result);
+Tensor new_from_mlx_only(::mlx::core::array input);
 Tensor new_from_mlx(::mlx::core::array input);
+ScalarType to_tensor_type(const ::mlx::core::array & arr);
 }
