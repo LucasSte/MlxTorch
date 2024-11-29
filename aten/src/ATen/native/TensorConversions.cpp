@@ -152,6 +152,7 @@ static Tensor cpu_to_mlx(const Tensor &self) {
   TensorImpl * TImpl = tensor.unsafeGetTensorImpl();
   TImpl->set_sizes_and_strides(self.sizes(), self.strides(), self.storage_offset());
   TImpl->unsafe_update_mlx_storage();
+  TImpl->storage().unsafeGetStorageImpl()->arr_st = TImpl->mlx_arr;
   return tensor;
 }
 

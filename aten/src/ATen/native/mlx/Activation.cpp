@@ -26,7 +26,7 @@ TORCH_IMPL_FUNC(sigmoid_out_mlx)(const Tensor& self, const Tensor& output) {
   ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
   ::mlx::core::array result_mlx = ::mlx::core::sigmoid(self_mlx, ::mlx::core::Device::gpu);
 
-  mlx::convert::introduce_result(std::move(result_mlx), output);
+  mlx::convert::introduce_mlx_only(std::move(result_mlx), output);
 }
 
 TORCH_IMPL_FUNC(sigmoid_backward_out_mlx)(const Tensor &grad_output, const Tensor &output, const Tensor &grad_input) {
@@ -41,7 +41,7 @@ TORCH_IMPL_FUNC(sigmoid_backward_out_mlx)(const Tensor &grad_output, const Tenso
   ::mlx::core::array times_tensor = ::mlx::core::multiply(one_minus_sigmoid, output_mlx, ::mlx::core::Device::gpu);
   ::mlx::core::array grad_input_mlx = ::mlx::core::multiply(grad_output_mlx, times_tensor, ::mlx::core::Device::gpu);
 
-  mlx::convert::introduce_result(std::move(grad_input_mlx), grad_input);
+  mlx::convert::introduce_mlx_only(std::move(grad_input_mlx), grad_input);
 }
 
 TORCH_IMPL_FUNC(threshold_backward_out_mlx)
@@ -60,7 +60,7 @@ TORCH_IMPL_FUNC(threshold_backward_out_mlx)
   // result = (self > threshold) ? grad : zero_tensor
   ::mlx::core::array grad_input_tensor = ::mlx::core::where(predicate_tensor, grad_tensor, zero_tensor, ::mlx::core::Device::gpu);
 
-  mlx::convert::introduce_result(std::move(grad_input_tensor), gradInput);
+  mlx::convert::introduce_mlx_only(std::move(grad_input_tensor), gradInput);
 }
 
 }

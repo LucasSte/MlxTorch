@@ -31,7 +31,7 @@ TORCH_IMPL_FUNC(addcmul_out_mlx)
 
   ::mlx::core::array result_mlx = ::mlx::core::add(self_mlx, mul2, ::mlx::core::Device::gpu);
 
-  mlx::convert::introduce_result(std::move(result_mlx), output);
+  mlx::convert::introduce_mlx_only(std::move(result_mlx), output);
 }
 
 TORCH_IMPL_FUNC(addcdiv_out_mlx)
@@ -50,6 +50,6 @@ TORCH_IMPL_FUNC(addcdiv_out_mlx)
 
   ::mlx::core::array result_mlx = ::mlx::core::add(self_mlx, mul, ::mlx::core::Device::gpu);
 
-  mlx::convert::introduce_result(std::move(result_mlx), output);
+  mlx::convert::introduce_mlx_only(std::move(result_mlx), output);
 }
 }

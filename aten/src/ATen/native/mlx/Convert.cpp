@@ -94,21 +94,28 @@ ScalarType to_tensor_type(const ::mlx::core::array & arr) {
     mlx_strides[i] = static_cast<size_t>(self_strides[i]);
   }
 
+  ::mlx::core::array self_mlx;
   const at::DataPtr& data_ptr = self.storage().data_ptr();
+  if (data_ptr.get() == nullptr && !self.storage().unsafeGetStorageImpl()->arr_st.is_null()) {
+      TensorImpl * Impl = self.unsafeGetTensorImpl();
+      Impl->mlx_arr = self.storage().unsafeGetStorageImpl()->arr_st;
+      self_mlx = Impl->mlx_arr;
+  } else {
+    ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
+    ctr_ptr->rc.fetch_add(1);
+    ::mlx::core::allocator::Buffer buf = {ctr_ptr->mtl_ptr};
 
-  ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr.get());
-  ctr_ptr->rc.fetch_add(1);
-  ::mlx::core::allocator::Buffer buf = {ctr_ptr->mtl_ptr};
+    ::mlx::core::Dtype mlx_type = convert_type(self);
 
-  ::mlx::core::Dtype mlx_type = convert_type(self);
+    //  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) * self.dtype().itemsize();
+    self_mlx = ::mlx::core::array(
+        std::move(buf),
+        mlx_shape,
+        mlx_type,
+        ::mlx::core::allocator::free
+    );
+  }
 
-//  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) * self.dtype().itemsize();
-  ::mlx::core::array self_mlx = ::mlx::core::array(
-      std::move(buf),
-      mlx_shape,
-      mlx_type,
-      ::mlx::core::allocator::free
-  );
   ::mlx::core::array mlx_res = ::mlx::core::as_strided(self_mlx, std::move(mlx_shape), std::move(mlx_strides), static_cast<size_t>(self.storage_offset()));
   mlx_res.eval();
   return mlx_res;
@@ -249,12 +256,15 @@ Tensor new_from_mlx(::mlx::core::array input) {
 
 void introduce_mlx_only(::mlx::core::array mlx_result, const Tensor& tensor_result) {
   mlx_result.eval();
+  tensor_result.storage().set_nbytes(c10::SymInt(static_cast<int64_t>(mlx_result.nbytes())));
+
   TensorImpl * TImpl = tensor_result.unsafeGetTensorImpl();
+  //TImpl->set_sizes_and_strides(sizes_ref, strides_ref, storage_offset);
   TImpl->mlx_arr = std::move(mlx_result);
+  TImpl->storage().unsafeGetStorageImpl()->arr_st = TImpl->mlx_arr;
 }
 
 void introduce_result(::mlx::core::array mlx_result, const Tensor& tensor_result) {
-  mlx_result.eval();
   auto data_ptr = mlx_result.data_shared_ptr();
   Allocator *allocator = at::mlx::getMLXAllocator();
   ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(data_ptr->buffer.raw_ptr());

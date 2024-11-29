@@ -11,6 +11,7 @@
 #include <c10/util/Exception.h>
 #include <c10/util/UniqueVoidPtr.h>
 #include <c10/util/intrusive_ptr.h>
+#include <mlx/array.h>
 #include <cstddef>
 #include <utility>
 
@@ -51,6 +52,7 @@ struct C10_API StorageExtraMeta {
 //   mutation because data pointers are the same are totally untracked
 struct C10_API StorageImpl : public c10::intrusive_ptr_target {
  public:
+  ::mlx::core::array arr_st;
   struct use_byte_size_t {};
 
   StorageImpl(

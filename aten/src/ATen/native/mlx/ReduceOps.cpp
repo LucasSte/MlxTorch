@@ -42,7 +42,7 @@ TORCH_IMPL_FUNC(sum_out_mlx)
     result = ::mlx::core::sum(input_mlx, keepdim, ::mlx::core::Device::gpu);
   }
 
-  mlx::convert::introduce_result(std::move(result), output_t);
+  mlx::convert::introduce_mlx_only(std::move(result), output_t);
 }
 
 TORCH_IMPL_FUNC(mean_out_mlx)
@@ -69,7 +69,7 @@ TORCH_IMPL_FUNC(mean_out_mlx)
     result = ::mlx::core::mean(input_mlx, keepdim, ::mlx::core::Device::gpu);
   }
 
-  mlx::convert::introduce_result(std::move(result), output_t);
+  mlx::convert::introduce_mlx_only(std::move(result), output_t);
 }
 
 }

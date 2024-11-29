@@ -35,7 +35,7 @@ Tensor & fill_scalar_mlx(Tensor &self, const Scalar &value) {
     result = ::mlx::core::full(std::move(mlx_shape), val, ::mlx::core::uint64);
   }
 
-  mlx::convert::introduce_result(std::move(result), self);
+  mlx::convert::introduce_mlx_only(std::move(result), self);
   return self;
 }
 
