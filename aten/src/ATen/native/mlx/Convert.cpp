@@ -136,7 +136,7 @@ Tensor new_from_mlx_only(::mlx::core::array input) {
   input.eval();
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
   // What about using the Data shared ptr for memory management?
-  auto sym_int = SymInt(0);
+  auto sym_int = SymInt(static_cast<int64_t>(input.nbytes()));
 
   DataPtr data_ptr(nullptr, nullptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
   auto storage_impl = c10::make_intrusive<StorageImpl>(
@@ -154,30 +154,30 @@ Tensor new_from_mlx_only(::mlx::core::array input) {
   );
 
   // TODO: I believe this part (and maybe the entire function is still necessary)
-  // TODO: Test introduce_mlx_only by first!
-//  auto mlx_shape = input.shape();
-//  std::vector<int64_t> ref(mlx_shape.size());
-//  for(size_t i=0; i<mlx_shape.size(); i++) {
-//    ref[i] = static_cast<int64_t>(mlx_shape[i]);
-//  }
-//  auto shape_ref = ArrayRef(ref);
-//
-//  auto mlx_strides = input.strides();
-//  std::vector<int64_t> ref2(mlx_strides.size());
-//  for(size_t i=0; i<mlx_strides.size(); i++) {
-//    ref2[i] = static_cast<int64_t>(mlx_strides[i]);
-//  }
-//  auto strides_ref = ArrayRef(ref2);
-//
-//  size_t bytes_offset = input.storage_offset();
-//  std::optional<int64_t> tensor_offset = std::nullopt;
-//  if (bytes_offset > 0) {
-//    tensor_offset = static_cast<int64_t>(bytes_offset / tensor.dtype().itemsize());
-//  }
+  auto mlx_shape = input.shape();
+  std::vector<int64_t> ref(mlx_shape.size());
+  for(size_t i=0; i<mlx_shape.size(); i++) {
+    ref[i] = static_cast<int64_t>(mlx_shape[i]);
+  }
+  auto shape_ref = ArrayRef(ref);
+
+  auto mlx_strides = input.strides();
+  std::vector<int64_t> ref2(mlx_strides.size());
+  for(size_t i=0; i<mlx_strides.size(); i++) {
+    ref2[i] = static_cast<int64_t>(mlx_strides[i]);
+  }
+  auto strides_ref = ArrayRef(ref2);
+
+  size_t bytes_offset = input.storage_offset();
+  std::optional<int64_t> tensor_offset = std::nullopt;
+  if (bytes_offset > 0) {
+    tensor_offset = static_cast<int64_t>(bytes_offset / tensor.dtype().itemsize());
+  }
 
   TensorImpl * TImpl = tensor.unsafeGetTensorImpl();
-  // TImpl->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
+  TImpl->set_sizes_and_strides(shape_ref, strides_ref, tensor_offset);
   TImpl->mlx_arr = std::move(input);
+  TImpl->storage().unsafeGetStorageImpl()->arr_st = TImpl->mlx_arr;
   return tensor;
 }
 

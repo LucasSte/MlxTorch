@@ -19,7 +19,7 @@ Tensor relu_mlx(const Tensor& self) {
   ::mlx::core::array zero = ::mlx::core::array(0.0, mlx::convert::convert_type(self));
   ::mlx::core::array result = ::mlx::core::maximum(array, zero, ::mlx::core::Device::gpu);
 
-  return mlx::convert::new_from_mlx(std::move(result));
+  return mlx::convert::new_from_mlx_only(std::move(result));
 }
 
 TORCH_IMPL_FUNC(sigmoid_out_mlx)(const Tensor& self, const Tensor& output) {
