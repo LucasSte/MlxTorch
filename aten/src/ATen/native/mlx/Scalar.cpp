@@ -7,6 +7,7 @@
 namespace at::native {
 Scalar _local_scalar_dense_mlx(const Tensor& self) {
   ::mlx::core::array arr = self.unsafeGetTensorImpl()->mlx_arr;
+  arr.eval();
   mlx::convert::introduce_result(arr, self);
 
   Scalar r;

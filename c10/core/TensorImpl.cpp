@@ -89,6 +89,7 @@ void TensorImpl::unsafe_update_mlx_storage() {
       ::mlx::core::allocator::free
   );
   unsafe_mlx_update_sizes_and_strides(std::move(shape));
+  storage_.unsafeGetStorageImpl()->arr_st = this->mlx_arr;
 }
 
 void TensorImpl::update_mlx_storage() {

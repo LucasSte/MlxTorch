@@ -47,8 +47,8 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
 
 // Just to remember: (register_dispatch_key.py -> create_out)
 
-// 1. Reduce operations overhead (creating mlx tensors)
-// 2. Only evaluate when needed. If I use MPS operations (try to avoid them), evaluate MLX and sync MPS.
+// 1. Make sure the storage array is properly synchronized with the tensor one
+// 2. Async evaluation
 // 3. Ensure all operations are correctly implemented (write mlx evaluation tests)
 // 4. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
 // 5. Release

@@ -410,6 +410,7 @@ Tensor _to_copy(
               // TODO: I'm assuming the type doesn't change
               at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
               TensorImpl * SelfImpl = self.unsafeGetTensorImpl();
+              SelfImpl->mlx_arr.eval();
               void * raw_ptr = SelfImpl->mlx_arr.data_shared_ptr()->buffer.raw_ptr();
               ::mlx::core::allocator::MemControl* ctr_ptr = ::mlx::core::allocator::MemControl::mem_control_ptr(raw_ptr);
               ctr_ptr->rc.fetch_add(1);

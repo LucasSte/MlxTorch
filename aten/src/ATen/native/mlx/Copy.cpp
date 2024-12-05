@@ -33,6 +33,7 @@ static Tensor copy_mlx(const Tensor &src, const Tensor &dst, bool sameType) {
     src_mlx = ::mlx::core::astype(src_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
   }
   ::mlx::core::array result = ::mlx::core::copy(src_mlx, ::mlx::core::Device::gpu);
+  result.eval();
   mlx::convert::introduce_mlx_only(std::move(result), dst);
   return dst;
 }
@@ -128,6 +129,7 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
     if (!sameDataType) {
       ::mlx::core::array res_mlx = mlx::convert::tensor_to_mlx(res);
       ::mlx::core::array casted = ::mlx::core::astype(res_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
+      casted.eval();
       mlx::convert::introduce_mlx_only(std::move(res_mlx), res);
       return res;
     }
@@ -140,9 +142,11 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
     if (!sameDataType) {
       ::mlx::core::array res_mlx = mlx::convert::retrieve_array(self);
       ::mlx::core::array casted = ::mlx::core::astype(res_mlx, mlx::convert::convert_type(dst), ::mlx::core::Device::gpu);
+      casted.eval();
       mlx::convert::introduce_mlx_only(std::move(res_mlx), dst);
       return dst;
     }
+    self.unsafeGetTensorImpl()->mlx_arr.eval();
     return copy_between_devices(needs_broadcasting ? self.expand_as(dst) : self, dst, at::Device(at::DeviceType::CPU, -1));
   }
 
