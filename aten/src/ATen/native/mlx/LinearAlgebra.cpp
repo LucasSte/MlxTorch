@@ -47,11 +47,10 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
 
 // Just to remember: (register_dispatch_key.py -> create_out)
 
-// 1. Make sure the storage array is properly synchronized with the tensor one
-// 2. Async evaluation
-// 3. Ensure all operations are correctly implemented (write mlx evaluation tests)
-// 4. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
-// 5. Release
+// 1. Async evaluation
+// 2. Ensure all operations are correctly implemented (write mlx evaluation tests)
+// 3. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
+// 4. Release
 }
 
 TORCH_IMPL_FUNC(addmm_out_mlx)
