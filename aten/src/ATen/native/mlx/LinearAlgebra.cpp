@@ -1,5 +1,4 @@
 #include <ATen/TensorMeta.h>
-#include <ATen/native/mlx/LinearAlgebra.h>
 #include <mlx/array.h>
 #include <mlx/ops.h>
 
@@ -23,7 +22,13 @@
 namespace at::native {
 
 TORCH_IMPL_FUNC(mm_out_mlx)(const Tensor & self, const Tensor & mat2, const Tensor & result) {
-  mm_out_mlx_impl(self, mat2, result);
+  ::mlx::core::array self_mlx = mlx::convert::tensor_to_mlx(self);
+  ::mlx::core::array mat2_mlx = mlx::convert::tensor_to_mlx(mat2);
+
+  ::mlx::core::array result_mlx = ::mlx::core::matmul(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
+  result_mlx.eval();
+
+  mlx::convert::introduce_result(result_mlx, result);
 }
 
 TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {
@@ -32,25 +37,6 @@ TORCH_IMPL_FUNC(mul_out_mlx)(const Tensor& self, const Tensor& mat2, const Tenso
   ::mlx::core::array result_mlx = ::mlx::core::multiply(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
 
   mlx::convert::introduce_mlx_only(std::move(result_mlx), output);
-}
-
-
-    void mm_out_mlx_impl(const Tensor & self, const Tensor & mat2, const Tensor & result) {
-  // Ensure both tensors are in MLX or CPU!
-
-  ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
-  ::mlx::core::array& mat2_mlx = mlx::convert::retrieve_array(mat2);
-
-  ::mlx::core::array result_mlx = ::mlx::core::matmul(self_mlx, mat2_mlx, ::mlx::core::Device::gpu);
-
-  mlx::convert::introduce_mlx_only(std::move(result_mlx), result);
-
-// Just to remember: (register_dispatch_key.py -> create_out)
-
-// 1. Async evaluation
-// 2. Ensure all operations are correctly implemented (write mlx evaluation tests)
-// 3. Understand how much work is needed to benchmark things (only do it if it is going to be quick)
-// 4. Release
 }
 
 TORCH_IMPL_FUNC(addmm_out_mlx)
@@ -69,7 +55,6 @@ TORCH_IMPL_FUNC(addmm_out_mlx)
  ::mlx::core::array result_mlx = ::mlx::core::addmm(bias, input, weight, falpha, fbeta, ::mlx::core::Device::gpu);
  mlx::convert::introduce_mlx_only(std::move(result_mlx), const_cast<Tensor&>(result));
 }
-// TODO: Put the following in another file
 
 TORCH_IMPL_FUNC(bitwise_and_out_mlx)(const Tensor& self, const Tensor& mat2, const Tensor& output) {
   ::mlx::core::array& self_mlx = mlx::convert::retrieve_array(self);
