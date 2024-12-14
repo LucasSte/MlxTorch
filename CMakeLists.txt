@@ -163,7 +163,6 @@ if(APPLE)
         PATHS ${_SDK_SEARCH_PATH}
         NO_DEFAULT_PATH)
 
-      # TODO: Ste: This step can be automated. Yes it can!
       find_library(
               _MLX_PATH
               NAMES mlx libmlx
@@ -288,9 +287,7 @@ option(USE_PYTORCH_METAL "Use Metal for PyTorch iOS build" OFF)
 option(USE_PYTORCH_METAL_EXPORT "Export Metal models on MacOSX desktop" OFF)
 option(USE_NATIVE_ARCH "Use -march=native" OFF)
 cmake_dependent_option(USE_MPS "Use MPS for macOS build" ON "MPS_FOUND" OFF)
-# TODO: lpt: MLX is not dependent on MPS
 cmake_dependent_option(USE_MLX "Use MLX for macOS build" ON "MPS_FOUND" OFF)
-#option(USE_MLX "Use MLX for macOS build" ON)
 cmake_dependent_option(USE_NCCL "Use NCCL" ON
                        "USE_CUDA OR USE_ROCM;UNIX;NOT APPLE" OFF)
 cmake_dependent_option(USE_RCCL "Use RCCL" ON USE_NCCL OFF)

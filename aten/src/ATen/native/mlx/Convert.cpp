@@ -79,7 +79,6 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   }
 }
 
-// TODO: This needs to account for strides!
 ::mlx::core::array tensor_to_mlx(const Tensor &self) {
   auto self_sizes = self.sizes();
   std::vector<int> mlx_shape(self_sizes.size());
@@ -102,7 +101,6 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
 
   ::mlx::core::Dtype mlx_type = convert_type(self);
 
-//  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) * self.dtype().itemsize();
   ::mlx::core::array self_mlx = ::mlx::core::array(
       std::move(buf),
       mlx_shape,

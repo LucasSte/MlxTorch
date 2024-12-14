@@ -62,20 +62,14 @@ static void copy_to_mlx_from_external(Tensor &dst, const Tensor &src) {
 
 static Tensor copy_from_non_mlx(const Tensor &src_, const Tensor &dst_) {
   Tensor src = (src_.dtype() != dst_.dtype() ? src_.to(dst_.dtype()) : src_).expand_as(dst_);
-
-  // If src is not densely mapped in storage it must be cloned
-  // It does not mean that tensor is contiguous, but rather
-  // that it could be represented as 1d view
+  // Code from the MPS backend
   if (!is_dense_in_storage(src)) {
     src = src.clone();
     TORCH_INTERNAL_ASSERT(is_dense_in_storage(src));
   }
   Tensor dst = dst_;
   bool needs_copy = false;
-  // If src and dst_ strides do not match, it means that
-  // either dst_ is not representable as 1d view or its stride order is different
-  // in that case create an empty storage like src, copy it to device and then do
-  // reshaping on the device
+
   if (src.strides() != dst_.strides()) {
     needs_copy = true;
     dst = at::empty_like(src, at::device(at::kMLX));
@@ -117,7 +111,7 @@ Tensor _copy_from_mlx(const Tensor& self, const Tensor& dst, bool non_blocking) 
     return copy_mlx(needs_broadcasting ? self.expand_as(dst) : self, dst, sameDataType);
   }
 
-  // TODO: I'm assuming we can avoid a copy in these two cases.
+  // I'm assuming we can avoid a copy in these two cases.
   if (self.device().type() == at::kCPU && dst.device().type() == kMLX) {
     if (!self.storage().data_ptr().in_mlx_cpu()) {
         return copy_from_non_mlx(needs_broadcasting ? self.expand_as(dst) : self, dst);

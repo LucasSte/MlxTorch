@@ -6,8 +6,6 @@
 #include "MLXAllocator.h"
 
 namespace at::detail {
-// Try following CUDA's implementation. If that does not work,
-// try the MPS one.
 
 TensorBase empty_mlx(
     IntArrayRef size,
@@ -130,7 +128,6 @@ TensorBase create_null_mlx(
     IntArrayRef size,
     IntArrayRef stride,
     const TensorOptions &options) {
-//  std::cout << "Calling create null" << std::endl;
   at::Allocator * mlx_allocator = at::mlx::getMLXAllocator();
   DataPtr null_ptr(nullptr, nullptr, mlx_allocator->raw_deleter(), at::Device(at::DeviceType::MLX, 0));
   c10::SymInt size_bytes(0);
@@ -149,12 +146,6 @@ TensorBase create_null_mlx(
       std::move(storage_impl), mlx_dks, dtype
       );
 
-  // I believe the following is not necessary
-//  if (stride.empty() && (size.size() != 1 || size[0] != 0)) {
-//    tensor.unsafeGetTensorImpl()->set_sizes_contiguous(size);
-//  } else if (!stride.empty()) {
-//    tensor.unsafeGetTensorImpl()->set_sizes_and_strides(size, stride);
-//  }
   return tensor;
 }
 

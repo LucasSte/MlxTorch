@@ -10,9 +10,6 @@ Tensor binary_cross_entropy_mlx(const Tensor& input,
                                 const Tensor& target,
                                 const std::optional<Tensor>& weight_opt,
                                 int64_t reduction) {
-  // TODO: Is this necessary?
-//  Tensor input_squeezed = input.squeeze();
-//  Tensor target_squeezed = target.squeeze();
   c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
   const Tensor &weight = *weight_maybe_owned;
 
@@ -62,9 +59,6 @@ Tensor binary_cross_entropy_backward_mlx(const Tensor& grad_output,
                                          const Tensor& target,
                                          const std::optional<Tensor>& weight_opt,
                                          int64_t reduction) {
-  // TODO: Is this necessary?
-//  Tensor input_squeezed = input.squeeze();
-//  Tensor target_squeezed = target.squeeze();
   c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
   const Tensor &weight = *weight_maybe_owned;
 
