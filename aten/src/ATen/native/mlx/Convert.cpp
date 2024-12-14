@@ -106,7 +106,6 @@ ScalarType to_tensor_type(const ::mlx::core::array & arr) {
 
     ::mlx::core::Dtype mlx_type = convert_type(self);
 
-    //  size_t bytes_offset = static_cast<size_t>(self.storage_offset()) * self.dtype().itemsize();
     self_mlx = ::mlx::core::array(
         std::move(buf),
         mlx_shape,
@@ -124,7 +123,6 @@ ScalarType to_tensor_type(const ::mlx::core::array & arr) {
   TensorImpl * impl = self.unsafeGetTensorImpl();
   ::mlx::core::array * arr = &impl->mlx_arr;
   if (arr->is_null()) {
-    // TODO: Define another way to check if it has been initialized
     *arr = tensor_to_mlx(self);
     return *arr;
   }
@@ -152,7 +150,6 @@ Tensor new_from_mlx_only(::mlx::core::array input) {
       std::move(storage_impl), mlx_dks, type
   );
 
-  // TODO: I believe this part (and maybe the entire function is still necessary)
   auto mlx_shape = input.shape();
   std::vector<int64_t> ref(mlx_shape.size());
   for(size_t i=0; i<mlx_shape.size(); i++) {

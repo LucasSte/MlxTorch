@@ -6,8 +6,6 @@
 #include "MLXAllocator.h"
 
 namespace at::detail {
-// Try following CUDA's implementation. If that does not work,
-// try the MPS one.
 
 TensorBase empty_mlx(
     IntArrayRef size,
