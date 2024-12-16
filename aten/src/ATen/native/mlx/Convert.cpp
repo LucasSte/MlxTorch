@@ -81,16 +81,16 @@ static ScalarType to_tensor_type(const ::mlx::core::array & arr) {
 
 ::mlx::core::array tensor_to_mlx(const Tensor &self) {
   auto self_sizes = self.sizes();
-  std::vector<int> mlx_shape(self_sizes.size());
+  std::vector<int32_t> mlx_shape(self_sizes.size());
   // TODO: Can this be optimized?
   for (size_t i=0; i<self_sizes.size(); i++) {
     mlx_shape[i] = static_cast<int>(self_sizes[i]);
   }
 
   auto self_strides = self.strides();
-  std::vector<size_t> mlx_strides(self_strides.size());
+  std::vector<int64_t> mlx_strides(self_strides.size());
   for (size_t i=0; i<self_strides.size(); i++) {
-    mlx_strides[i] = static_cast<size_t>(self_strides[i]);
+    mlx_strides[i] = static_cast<int64_t>(self_strides[i]);
   }
 
   const at::DataPtr& data_ptr = self.storage().data_ptr();
@@ -142,13 +142,7 @@ Tensor new_from_mlx(const ::mlx::core::array & input) {
     ref[i] = static_cast<int64_t>(mlx_shape[i]);
   }
   auto shape_ref = ArrayRef(ref);
-
-  auto mlx_strides = input.strides();
-  std::vector<int64_t> ref2(mlx_strides.size());
-  for(size_t i=0; i<mlx_strides.size(); i++) {
-    ref2[i] = static_cast<int64_t>(mlx_strides[i]);
-  }
-  auto strides_ref = ArrayRef(ref2);
+  auto strides_ref = ArrayRef(input.strides());
 
   size_t bytes_offset = input.storage_offset();
   std::optional<int64_t> tensor_offset = std::nullopt;
@@ -196,19 +190,14 @@ void introduce_result(const ::mlx::core::array& mlx_result, const Tensor& tensor
   size_t bytes_offset = mlx_result.storage_offset();
   size_t original_offset = static_cast<size_t>(tensor_result.storage_offset()) * tensor_result.dtype().itemsize();
 
-  const std::vector<int> &mlx_sizes = mlx_result.shape();
+  const std::vector<int32_t> &mlx_sizes = mlx_result.shape();
   std::vector<int64_t> torch_sizes(mlx_sizes.size());
   for (size_t i=0; i<mlx_sizes.size(); i++) {
     torch_sizes[i] = static_cast<int64_t>(mlx_sizes[i]);
   }
   IntArrayRef sizes_ref = ArrayRef<int64_t>(torch_sizes);
 
-  const std::vector<size_t> &mlx_strides = mlx_result.strides();
-  std::vector<int64_t> torch_strides(mlx_strides.size());
-  for (size_t i=0; i<mlx_strides.size(); i++) {
-    torch_strides[i] = static_cast<int64_t>(mlx_strides[i]);
-  }
-  IntArrayRef strides_ref = ArrayRef<int64_t>(torch_strides);
+  IntArrayRef strides_ref = ArrayRef<int64_t>(mlx_result.strides());
 
   std::optional<int64_t> storage_offset = std::nullopt;
   if (bytes_offset != original_offset) {
