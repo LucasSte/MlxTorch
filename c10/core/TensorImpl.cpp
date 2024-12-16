@@ -100,9 +100,9 @@ void TensorImpl::update_mlx_storage() {
 
 void TensorImpl::unsafe_mlx_update_sizes_and_strides(std::vector<int> mlx_shape) {
   auto self_strides = this->strides();
-  std::vector<size_t> mlx_strides(self_strides.size());
+  std::vector<int64_t> mlx_strides(self_strides.size());
   for (size_t i=0; i<self_strides.size(); i++) {
-    mlx_strides[i] = static_cast<size_t>(self_strides[i]);
+    mlx_strides[i] = static_cast<int64_t>(self_strides[i]);
   }
 
   this->mlx_arr = ::mlx::core::as_strided(std::move(this->mlx_arr), std::move(mlx_shape),
@@ -934,15 +934,15 @@ void TensorImpl::ShareExternalPointer(
 
   if (device_opt_.has_value() && *device_opt_ == at::kMLX) {
     auto self_sizes = sizes();
-    std::vector<int> mlx_shape(self_sizes.size());
+    std::vector<int32_t> mlx_shape(self_sizes.size());
     for (size_t i=0; i<self_sizes.size(); i++) {
-      mlx_shape[i] = static_cast<int>(self_sizes[i]);
+      mlx_shape[i] = static_cast<int32_t>(self_sizes[i]);
     }
 
     auto self_strides = strides();
-    std::vector<size_t> mlx_strides(self_strides.size());
+    std::vector<int64_t> mlx_strides(self_strides.size());
     for (size_t i=0; i<self_strides.size(); i++) {
-      mlx_strides[i] = static_cast<size_t>(self_strides[i]);
+      mlx_strides[i] = static_cast<int64_t>(self_strides[i]);
     }
 
     const at::DataPtr& data_ptr2 = storage().data_ptr();
