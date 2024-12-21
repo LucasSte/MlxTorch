@@ -1,7 +1,12 @@
 # MlxTorch
 
 This is a fork of PyTorch with the intent to experiment having the MLX as a backend. The goal was simply to detect if
-such an integration was possible and whether we would have any gains.
+such an integration was possible and whether we would have any gains. 
+
+This branch tests deferring the execution of code in the GPU until the final result is necessary in an attempt to 
+improve performance over the eager implementation.
+
+This solution is likely the preferred for the continuation of this library if there is enough interest.
 
 ### Comparison with MPS
 
@@ -51,7 +56,9 @@ expressions eagerly, and we haven't implemented asynchronous execution in the GP
 although having extra memory copies, sends commands asynchronously to the GPU, decreasing its execution time.
 
 MPS time: ``2.86s``
-MLX time: ``15.27s``
+MLX time: ``2.67s``
+
+Check the reproducible test in the [mlx_examples](mlx_examples/nn_op.py) folder.
 
 There is an experimental asynchronous execution implementation for MLX in the [release-exp] branch. The README file 
 there contains more information.
@@ -60,20 +67,27 @@ there contains more information.
 
 ##### Is it faster than MPS?
 
-The eager version is not, unless we are executing standalone operations. The asynchronous execution can potentially
-achieve similar or better performance if implemented correctly.
+The asynchronous execution can potentially achieve similar or better performance if implemented correctly, once all
+bugs are fixed.
 
 ##### Can I use this project as is?
 
-There are many not implemented functions, so it is very likely that for some PyTorch operations you'll see a not
-implemented error. Also, the PyTorch function `.to()` always expects the return array to be copied, when a cast or a
-device transfer is needed. We changed the semantics to avoid copies, and this behavior may be incompatible with some 
-libraries.
+This asynchronous implementation is incomplete in that it has many bugs that needs to be solved. In addition, the 
+underlying scheme for sharing memory between the MLX framework and MPS needs to be revised. It is particularly difficult
+to solve such a problem because PyTorch pre-allocates arrays before calculation while MLX allocates them on the fly.
+
+As in the `release-version` branch,  the PyTorch function `.to()` always expects the return array to be copied,
+when a cast or a device transfer is needed. We changed the semantics to avoid copies, and this behavior may be 
+incompatible with some libraries.
 
 ##### How to install it?
 
 Run `./build.sh develop` from the root folder to install this version of MLX to the Python environment you are running
 the command from, or `./build.sh bdist_wheel` to create a wheel file.
+ 
+---
+---
+
 
 ![PyTorch Logo](https://github.com/pytorch/pytorch/raw/main/docs/source/_static/img/pytorch-logo-dark.png)
 
