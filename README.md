@@ -25,7 +25,8 @@ A standalone operation, like ``matmul`` shown above, is faster in the MLX backen
 copying the arrays from the CPU to the GPU in the MLX backend, while MPS performs the entire copy.
 
 MPS time: ``0.166s``
-MLX time: ``0.033s``
+MLX time (eager): ``0.033s``
+MLX time (async): ``0.033s``
 
 Check the reproducible test in the [mlx_examples](mlx_examples/standalone_op.py) folder.
 
@@ -51,7 +52,10 @@ expressions eagerly, and we haven't implemented asynchronous execution in the GP
 although having extra memory copies, sends commands asynchronously to the GPU, decreasing its execution time.
 
 MPS time: ``2.86s``
-MLX time: ``15.27s``
+MLX time (eager): ``15.27s``
+MLX time (async): ``2.67s``
+
+Check the reproducible test in the [mlx_examples](mlx_examples/nn_op.py) folder.
 
 There is an experimental asynchronous execution implementation for MLX in the [release-exp] branch. The README file 
 there contains more information.
@@ -61,7 +65,7 @@ there contains more information.
 ##### Is it faster than MPS?
 
 The eager version is not, unless we are executing standalone operations. The asynchronous execution can potentially
-achieve similar or better performance if implemented correctly.
+achieve similar or better performance. Check [release-exp] for more information.
 
 ##### Can I use this project as is?
 
@@ -70,10 +74,18 @@ implemented error. Also, the PyTorch function `.to()` always expects the return 
 device transfer is needed. We changed the semantics to avoid copies, and this behavior may be incompatible with some 
 libraries.
 
+##### Will development continue?
+
+This project has consumed a very lot of my free time. I want to gauge community interest before spending more time on
+it. The preferred version for development is the asynchronous one, as it is faster than this one. 
+
 ##### How to install it?
 
 Run `./build.sh develop` from the root folder to install this version of MLX to the Python environment you are running
 the command from, or `./build.sh bdist_wheel` to create a wheel file.
+
+----
+----
 
 ![PyTorch Logo](https://github.com/pytorch/pytorch/raw/main/docs/source/_static/img/pytorch-logo-dark.png)
 
