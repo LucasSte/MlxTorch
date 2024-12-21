@@ -1,3 +1,71 @@
+# MlxTorch
+
+This is a fork of PyTorch with the intent to experiment having the MLX as a backend. The goal was simply to detect if
+such an integration was possible and whether we would have any gains.
+
+### Comparison with MPS
+
+#### Standalone operation
+
+```python
+dev = torch.device("mlx")
+cpu_arr = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10],
+          [11, 12, 13, 14, 15], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25]]
+arr = torch.tensor(cpu_arr, dtype=torch.float32)
+arr2 = arr.to(dev)
+
+cpu_arr2 = [[26, 27, 28, 29, 30], [31, 32, 33, 34, 35],
+            [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50]]
+arr3 = torch.tensor(cpu_arr2, dtype=torch.float32)
+arr6 = arr3.to(dev)
+arr4 = torch.matmul(arr2, arr6)
+```
+
+A standalone operation, like ``matmul`` shown above, is faster in the MLX backend than in the MPS, because we avoid
+copying the arrays from the CPU to the GPU in the MLX backend, while MPS performs the entire copy.
+
+MPS time: ``0.166s``
+MLX time: ``0.033s``
+
+Check the reproducible test in the [mlx_examples](mlx_examples/standalone_op.py) folder.
+
+#### Simple Neural network
+
+```python
+class NN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(60, 180, dtype=torch.float32)
+        self.relu = nn.ReLU()
+        self.output = nn.Linear(180, 1, dtype=torch.float32)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.relu(self.hidden(x))
+        x = self.sigmoid(self.output(x))
+        return x
+```
+
+Training a neural network like the one above for 50 epochs is slower in the MLX backend, because we are evaluating 
+expressions eagerly, and we haven't implemented asynchronous execution in the GPU. On the other hand, the MPS backend,
+although having extra memory copies, sends commands asynchronously to the GPU, decreasing its execution time.
+
+MPS time: ``2.86s``
+MLX time: ``15.27s``
+
+There is an experimental asynchronous execution implementation
+
+### FAQ
+
+##### Is it faster than MPS?
+
+##### Why is it so slow?
+
+##### Can I use this project as is?
+
+##### How to install it?
+
+
 ![PyTorch Logo](https://github.com/pytorch/pytorch/raw/main/docs/source/_static/img/pytorch-logo-dark.png)
 
 --------------------------------------------------------------------------------
