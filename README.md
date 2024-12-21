@@ -53,18 +53,27 @@ although having extra memory copies, sends commands asynchronously to the GPU, d
 MPS time: ``2.86s``
 MLX time: ``15.27s``
 
-There is an experimental asynchronous execution implementation
+There is an experimental asynchronous execution implementation for MLX in the [release-exp] branch. The README file 
+there contains more information.
 
 ### FAQ
 
 ##### Is it faster than MPS?
 
-##### Why is it so slow?
+The eager version is not, unless we are executing standalone operations. The asynchronous execution can potentially
+achieve similar or better performance if implemented correctly.
 
 ##### Can I use this project as is?
 
+There are many not implemented functions, so it is very likely that for some PyTorch operations you'll see a not
+implemented error. Also, the PyTorch function `.to()` always expects the return array to be copied, when a cast or a
+device transfer is needed. We changed the semantics to avoid copies, and this behavior may be incompatible with some 
+libraries.
+
 ##### How to install it?
 
+Run `./build.sh develop` from the root folder to install this version of MLX to the Python environment you are running
+the command from, or `./build.sh bdist_wheel` to create a wheel file.
 
 ![PyTorch Logo](https://github.com/pytorch/pytorch/raw/main/docs/source/_static/img/pytorch-logo-dark.png)
 
