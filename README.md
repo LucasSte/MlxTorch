@@ -55,19 +55,20 @@ MPS time: ``2.86s``
 
 MLX time (eager): ``15.27s``
 
-MLX time (async): ``2.67s`` (Check the [release-exp] branch)
+MLX time (async): ``2.67s`` (Check the [release-exp](https://github.com/LucasSte/MlxTorch/tree/release-exp) branch)
 
 Check the reproducible test in the [mlx_examples](mlx_examples/nn_op.py) folder.
 
-There is an experimental asynchronous execution implementation for MLX in the [release-exp] branch. The README file 
-there contains more information.
+There is an experimental asynchronous execution implementation for MLX in the 
+[release-exp](https://github.com/LucasSte/MlxTorch/tree/release-exp) branch. The README file there contains more information.
 
 ### FAQ
 
 ##### Is it faster than MPS?
 
 The eager version is not, unless we are executing standalone operations. The asynchronous execution can potentially
-achieve similar or better performance. Check [release-exp] for more information.
+achieve similar or better performance. Check [release-exp](https://github.com/LucasSte/MlxTorch/tree/release-exp) 
+for more information.
 
 ##### Can I use this project as is?
 
@@ -83,7 +84,8 @@ it. The preferred version for development is the asynchronous one, as it is fast
 
 ##### How to install it?
 
-First, install the dependencies in your Python environment: `pip install setuptools pyyaml numpy typing_extensions`
+First, install the dependencies in your Python environment: `pip install setuptools pyyaml numpy typing_extensions`.
+Second, install OpenMPI `brew install open-mpi`.
 
 Then, run `./build.sh develop` from the root folder to install this version of MlxTorch to the Python environment
 you are running the command from, or `./build.sh bdist_wheel` to create a wheel file.
