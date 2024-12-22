@@ -1,6 +1,6 @@
 # MlxTorch
 
-This is a fork of PyTorch with the intent to experiment having the MLX as a backend. The goal was simply to detect if
+This is a fork of PyTorch with the intent to experiment having MLX as a backend. The goal was simply to analyze if
 such an integration was possible and whether we would have any gains.
 
 ### Comparison with MPS
@@ -25,8 +25,8 @@ A standalone operation, like ``matmul`` shown above, is faster in the MLX backen
 copying the arrays from the CPU to the GPU in the MLX backend, while MPS performs the entire copy.
 
 MPS time: ``0.166s``
-MLX time (eager): ``0.033s``
-MLX time (async): ``0.033s``
+
+MLX time: ``0.033s``
 
 Check the reproducible test in the [mlx_examples](mlx_examples/standalone_op.py) folder.
 
@@ -52,8 +52,10 @@ expressions eagerly, and we haven't implemented asynchronous execution in the GP
 although having extra memory copies, sends commands asynchronously to the GPU, decreasing its execution time.
 
 MPS time: ``2.86s``
+
 MLX time (eager): ``15.27s``
-MLX time (async): ``2.67s``
+
+MLX time (async): ``2.67s`` (Check the [release-exp] branch)
 
 Check the reproducible test in the [mlx_examples](mlx_examples/nn_op.py) folder.
 
@@ -69,20 +71,22 @@ achieve similar or better performance. Check [release-exp] for more information.
 
 ##### Can I use this project as is?
 
-There are many not implemented functions, so it is very likely that for some PyTorch operations you'll see a not
-implemented error. Also, the PyTorch function `.to()` always expects the return array to be copied, when a cast or a
+There are many functions not implemented, so it is very likely that for some PyTorch operations you'll see a
+not-implemented error. Also, the PyTorch function `.to()` always expects the return array to be copied, when a cast or a
 device transfer is needed. We changed the semantics to avoid copies, and this behavior may be incompatible with some 
 libraries.
 
 ##### Will development continue?
 
-This project has consumed a very lot of my free time. I want to gauge community interest before spending more time on
+This project has consumed a very lot of time. I want to gauge community interest before spending more time on
 it. The preferred version for development is the asynchronous one, as it is faster than this one. 
 
 ##### How to install it?
 
-Run `./build.sh develop` from the root folder to install this version of MLX to the Python environment you are running
-the command from, or `./build.sh bdist_wheel` to create a wheel file.
+First, install the dependencies in your Python environment: `pip install setuptools pyyaml numpy typing_extensions`
+
+Then, run `./build.sh develop` from the root folder to install this version of MlxTorch to the Python environment
+you are running the command from, or `./build.sh bdist_wheel` to create a wheel file.
 
 ----
 ----

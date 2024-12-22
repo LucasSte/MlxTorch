@@ -97,7 +97,7 @@ if(NOT BUILD_LIBTORCHLESS)
   find_library(
           mlx_lib
           NAMES mlx libmlx
-          PATHS "/Users/lucasste/Documents/mlx/build"
+          PATHS "../mlx_srcs/build"
   )
   target_link_libraries(c10 PRIVATE  ${mlx_lib})
 
