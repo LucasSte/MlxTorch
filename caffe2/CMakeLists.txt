@@ -1638,11 +1638,10 @@ if(APPLE AND USE_PYTORCH_METAL)
 endif()
 
 
-# TODO: Ste this can be improved.
 find_library(
         mlx_lib
         NAMES mlx libmlx
-        PATHS "/Users/lucasste/Documents/mlx/build"
+        PATHS "../mlx_srcs/build"
 )
 target_link_libraries(torch_cpu PRIVATE  ${mlx_lib})
 
