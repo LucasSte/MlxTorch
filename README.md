@@ -30,6 +30,7 @@ A standalone operation, like ``matmul`` shown above, is faster in the MLX backen
 copying the arrays from the CPU to the GPU in the MLX backend, while MPS performs the entire copy.
 
 MPS time: ``0.166s``
+
 MLX time: ``0.033s``
 
 Check the reproducible test in the [mlx_examples](mlx_examples/standalone_op.py) folder.
@@ -55,6 +56,7 @@ Training a neural network like the one above for 50 epochs about the same time i
 asynchronous execution.
 
 MPS time: ``2.86s``
+
 MLX time: ``2.67s``
 
 Check the reproducible test in the [mlx_examples](mlx_examples/nn_op.py) folder.
@@ -79,7 +81,7 @@ incompatible with some libraries.
 ##### How to install it?
 
 First, install the dependencies in your Python environment: `pip install setuptools pyyaml numpy typing_extensions`.
-Second, install OpenMPI `brew install open-mpi`.
+Second, install OpenMPI: `brew install open-mpi`.
 
 Then, run `./build.sh develop` from the root folder to install this version of MlxTorch to the Python environment
 you are running the command from, or `./build.sh bdist_wheel` to create a wheel file.
