@@ -85,7 +85,7 @@ it. The preferred version for development is the asynchronous one, as it is fast
 ##### How to install it?
 
 First, install the dependencies in your Python environment: `pip install setuptools pyyaml numpy typing_extensions`.
-Second, install OpenMPI `brew install open-mpi`.
+Second, install OpenMPI: `brew install open-mpi`.
 
 Then, run `./build.sh develop` from the root folder to install this version of MlxTorch to the Python environment
 you are running the command from, or `./build.sh bdist_wheel` to create a wheel file.
