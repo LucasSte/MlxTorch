@@ -116,6 +116,63 @@ static void fill_conv_desc(MPSGraphConvolution2DOpDescriptor* descriptor_,
   descriptor_.groups = groups;
 }
 
+static MPSGraphTensor* permuteTensor(MPSGraph* graph, MPSGraphTensor* inputTensor, NSArray* permuteOrder) {
+  NSUInteger rank = [[inputTensor shape] count];
+  if (rank != [permuteOrder count]) {
+    return nil;
+  }
+  MPSGraphTensor* outputTensor = [graph transposeTensor:outputTensor permutation:permuteOrder name:"permuteTensor"];
+  return outputTensor;
+}
+
+static MPSGraphTensor* permuteReshape(MPSGraph* mpsGraph, MPSGraphTensor* input, MPSShape* shape_1, MPSShape* permutation, MPSShape* shape_2) {
+  MPSGraphTensor* reshaped = [mpsGraph reshapeTensor:input withShape:shape_1 name:"reshape1"];
+  if (is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_1_PLUS)) {
+    reshaped = [mpsGraph transposeTensor:reshaped permutation:permutation name:"transposed_reshape"];
+  } else {
+    reshaped = permuteTensor(mpsGraph, reshaped, permutation);
+  }
+
+  return [mpsGraph reshapeTensor:reshaped withShape:shaped_2 name:"reshape_2"];
+}
+
+static MPSGraphTensor* unfoldConvolution2D(MPSGraph* mpsGraph,
+                                           MPSGraphTensor* input,
+                                           NSUInteger stride,
+                                           NSUInteger padding,
+                                           NSUInteger dilation,
+                                           NSUInteger k_D,
+                                           MPSDataType dataType,
+                                           MPSShape* outShape,
+                                           bool notTranspose) {
+  MPSGraphConvolution2DOpDescriptor* conv2DDescriptor = [[MPSGraphConvolution2DOpDescriptor new] autorelease];
+  fill_conv_desc(conv2DDescriptor,
+                 1,
+                 stride,
+                 1,
+                 dilation,
+                 0,
+                 padding,
+                 at::MemoryFormat::Contiguous,
+                 1
+                 );
+
+  MPSGraphTensor* ones_k = [mpsGraph constantWithScalar:1.0f shape:@[@(k_D),@(k_D)] dataType: dataType];
+  MPSGraphTensor* eye_k = [mpsGraph bandPartWithTensor:ones_k numLower:0 numUpper:0 name:nil];
+
+  if (notTranspose) {
+    eye_k = [mpsGraph reshapeTensor:eye_k withShape:@[@(k_D),@1,@(k_D),@1] name:nil];
+  } else {
+    eye_k = [mpsGraph reshapeTensor:eye_k withShape:@[@1,@(k_D),@(k_D),@1] name:nil];
+  }
+
+  if (outShape == nil) {
+    return [mpsGraph convolution2DWithSourceTensor:input weightsTensor:eye_k descriptor:conv2DDescriptor name: "unfold_conv2d"];
+  }
+
+  return [mpsGraph convolution2DDataGradientWithIncomingGradientTensor:input weightsTensor:eye_k outputShape:outShape forwardConvolutionDescriptor:conv2DDescriptor name:"unfold_conv2d_shape"];
+}
+
 static Tensor _mps_convolution_impl(const Tensor& input_t_,
                                     const Tensor& weight_t,
                                     const std::optional<Tensor>& bias_opt,
