@@ -173,6 +173,45 @@ static MPSGraphTensor* unfoldConvolution2D(MPSGraph* mpsGraph,
   return [mpsGraph convolution2DDataGradientWithIncomingGradientTensor:input weightsTensor:eye_k outputShape:outShape forwardConvolutionDescriptor:conv2DDescriptor name:"unfold_conv2d_shape"];
 }
 
+static Tensor _mps_conv_transpose_3d(const Tensor& input_t,
+                                     const Tensor& weight_t,
+                                     IntArrayRef padding,
+                                     IntArrayRef output_padding,
+                                     IntArrayRef stride,
+                                     IntArrayRef dilation,
+                                     NSUInteger groups) {
+
+  TORCH_CHECK(isFloatingType(input_t.scalar_type()), "Convolution supports only floating point types.");
+
+  CheckedFrom operation_name = "mps_conv_transpose_3d";
+  TensorArg input{input_t, "input", 1}, weight{weight_t, "weight", 2};
+  checkAllSameType(operation_name, {input, weight});
+  checkAllSameGPU(operation_name, {input, weight});
+
+  auto bwd_input_size = conv_input_size(input->sizes(), weight->sizes(), padding, output_padding, stride, dilation, groups);
+  Tensor output_t = at::empty(bwd_input_size, input->scalar_type(), c10::nullopt, kMPS, c10::nullopt, c10::nullopt);
+
+  if (output_t.numel() == 0) {
+    return output_t;
+  }
+
+  TensorArg output{output_t, "result", 0};
+
+  struct CachedGraph: public MPSCachedGraph {
+    CachedGraph(MPSGraph* graph) : MPSCachedGraph(graph) {}
+    MPSGraphTensor* inputTensor = nil;
+    MPSGraphTensor* weightTensor = nil;
+    MPSGraphTensor* outputTensor = nil;
+  };
+
+  @autoreleasepool {
+    std::ostringstream mem_format_key;
+    mem_format_key << input_t.suggest_memory_format();
+
+    string key = ""
+  }
+}
+
 static Tensor _mps_convolution_impl(const Tensor& input_t_,
                                     const Tensor& weight_t,
                                     const std::optional<Tensor>& bias_opt,
