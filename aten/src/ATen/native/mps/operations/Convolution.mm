@@ -121,19 +121,20 @@ static MPSGraphTensor* permuteTensor(MPSGraph* graph, MPSGraphTensor* inputTenso
   if (rank != [permuteOrder count]) {
     return nil;
   }
-  MPSGraphTensor* outputTensor = [graph transposeTensor:outputTensor permutation:permuteOrder name:"permuteTensor"];
+  MPSGraphTensor* outputTensor = [graph transposeTensor:outputTensor permutation:permuteOrder name:@"permuteTensor"];
   return outputTensor;
 }
 
 static MPSGraphTensor* permuteReshape(MPSGraph* mpsGraph, MPSGraphTensor* input, MPSShape* shape_1, MPSShape* permutation, MPSShape* shape_2) {
-  MPSGraphTensor* reshaped = [mpsGraph reshapeTensor:input withShape:shape_1 name:"reshape1"];
+  MPSGraphTensor* reshaped = [mpsGraph reshapeTensor:input withShape:shape_1 name:@"reshape1"];
   if (is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_1_PLUS)) {
-    reshaped = [mpsGraph transposeTensor:reshaped permutation:permutation name:"transposed_reshape"];
+    // Is this going to work?
+    reshaped = [mpsGraph transposeTensor:reshaped permutation:permutation name:@"transposed_reshape"];
   } else {
     reshaped = permuteTensor(mpsGraph, reshaped, permutation);
   }
 
-  return [mpsGraph reshapeTensor:reshaped withShape:shaped_2 name:"reshape_2"];
+  return [mpsGraph reshapeTensor:reshaped withShape:shape_2 name:@"reshape_2"];
 }
 
 static MPSGraphTensor* unfoldConvolution2D(MPSGraph* mpsGraph,
@@ -144,7 +145,8 @@ static MPSGraphTensor* unfoldConvolution2D(MPSGraph* mpsGraph,
                                            NSUInteger k_D,
                                            MPSDataType dataType,
                                            MPSShape* outShape,
-                                           bool notTranspose) {
+                                           bool notTranspose,
+                                           NSUInteger groups) {
   MPSGraphConvolution2DOpDescriptor* conv2DDescriptor = [[MPSGraphConvolution2DOpDescriptor new] autorelease];
   fill_conv_desc(conv2DDescriptor,
                  1,
@@ -154,9 +156,10 @@ static MPSGraphTensor* unfoldConvolution2D(MPSGraph* mpsGraph,
                  0,
                  padding,
                  at::MemoryFormat::Contiguous,
-                 1
+                 groups
                  );
 
+  // Is this going to work?
   MPSGraphTensor* ones_k = [mpsGraph constantWithScalar:1.0f shape:@[@(k_D),@(k_D)] dataType: dataType];
   MPSGraphTensor* eye_k = [mpsGraph bandPartWithTensor:ones_k numLower:0 numUpper:0 name:nil];
 
@@ -167,10 +170,10 @@ static MPSGraphTensor* unfoldConvolution2D(MPSGraph* mpsGraph,
   }
 
   if (outShape == nil) {
-    return [mpsGraph convolution2DWithSourceTensor:input weightsTensor:eye_k descriptor:conv2DDescriptor name: "unfold_conv2d"];
+    return [mpsGraph convolution2DWithSourceTensor:input weightsTensor:eye_k descriptor:conv2DDescriptor name:@"unfold_conv2d"];
   }
 
-  return [mpsGraph convolution2DDataGradientWithIncomingGradientTensor:input weightsTensor:eye_k outputShape:outShape forwardConvolutionDescriptor:conv2DDescriptor name:"unfold_conv2d_shape"];
+  return [mpsGraph convolution2DDataGradientWithIncomingGradientTensor:input weightsTensor:eye_k outputShape:outShape forwardConvolutionDescriptor:conv2DDescriptor name:@"unfold_conv2d_shape"];
 }
 
 static Tensor _mps_conv_transpose_3d(const Tensor& input_t,
@@ -196,20 +199,94 @@ static Tensor _mps_conv_transpose_3d(const Tensor& input_t,
   }
 
   TensorArg output{output_t, "result", 0};
-
+  using namespace at::native::mps;
   struct CachedGraph: public MPSCachedGraph {
     CachedGraph(MPSGraph* graph) : MPSCachedGraph(graph) {}
-    MPSGraphTensor* inputTensor = nil;
-    MPSGraphTensor* weightTensor = nil;
-    MPSGraphTensor* outputTensor = nil;
+    MPSGraphTensor* inputTensor_ = nil;
+    MPSGraphTensor* weightTensor_ = nil;
+    MPSGraphTensor* outputTensor_ = nil;
   };
 
+  auto stream = at::mps::getCurrentMPSStream();
+  auto memory_format = input_t.suggest_memory_format();
   @autoreleasepool {
     std::ostringstream mem_format_key;
-    mem_format_key << input_t.suggest_memory_format();
+    mem_format_key << memory_format;
 
-    string key = ""
+    string key = "3d_conv_trans" + to_string(stride[0]) + ":" + to_string(stride[1]) + ":" + to_string(stride[2]) +
+      ":" + to_string(dilation[0]) + ":" + to_string(dilation[1]) + ":" + to_string(dilation[2]) + ":" +
+      to_string(padding[0]) + ":" + to_string(padding[1]) + ":" + to_string(padding[2]) + ":" + to_string(groups) +
+      ":" + mem_format_key.str() + getTensorsStringKey({input_t, weight_t});
+
+    MPSShape* inputShape = getMPSShape(input_t, memory_format);
+    auto cachedGraph = LookUpOrCreateCachedGraph<CachedGraph>(key, [&](auto mpsGraph, auto newCachedGraph) {
+      MPSShape* weightShape = getMPSShape(weight_t);
+
+      MPSGraphTensor* inputTensor = mpsGraphRankedPlaceHolder(mpsGraph, getMPSScalarType(input_t), inputShape);
+      MPSGraphTensor* weightTensor = mpsGraphRankedPlaceHolder(mpsGraph, weight_t);
+      MPSGraphTensor* outputTensor;
+
+      const NSUInteger B = inputShape[0].intValue;
+      const NSUInteger in_C = inputShape[1].intValue;
+      const NSUInteger out_C = weightShape[1].intValue;
+      const NSUInteger out_D = output_t.size(2);
+      const NSUInteger out_H = output_t.size(3);
+      const NSUInteger out_W = output_t.size(4);
+
+      const NSUInteger k_D = weightShape[2].intValue;
+      const NSUInteger k_H = weightShape[3].intValue;
+      const NSUInteger k_W = weightShape[4].intValue;
+
+      const NSUInteger in_D = inputShape[2].intValue;
+      const NSUInteger in_H = inputShape[3].intValue;
+      const NSUInteger in_W = inputShape[4].intValue;
+
+      MPSGraphTensor *weights1  = permuteReshape(mpsGraph, weightTensor, @[@(in_C),@(out_C),@(k_D),@(k_H),@(k_W)], @[@2,@0,@1,@3,@4], @[@(-1),@(out_C),@(k_H),@(k_W)]);
+      MPSGraphTensor *input1 = [mpsGraph reshapeTensor:inputTensor withShape:@[@(B*in_C),@1,@(in_D),@(in_H*in_W)] name:nil];
+      MPSGraphTensor *unfold_ = unfoldConvolution2D(mpsGraph, input1, stride[0], padding[0], dilation[0], k_D, getMPSScalarType(input_t), @[@(B*in_C),@(k_D),@(out_D),@(in_H*in_W)], false, groups);
+      MPSGraphTensor *unfold = permuteReshape(mpsGraph, unfold_, @[@(B),@(in_C),@(k_D),@(out_D),@(in_H),@(in_W)], @[@0,@3,@2,@1,@4,@5], @[@(B*out_D),@(in_C*k_D),@(in_H),@(in_W)]);
+
+      MPSGraphConvolution2DOpDescriptor* conv2DDescriptor = [[MPSGraphConvolution2DOpDescriptor new] autorelease];
+      fill_conv_desc(conv2DDescriptor,
+                     stride[2],
+                     stride[1],
+                     dilation[2],
+                     dilation[1],
+                     padding[2],
+                     padding[1],
+                     at::MemoryFormat::Contiguous,
+                     groups);
+
+      MPSGraphTensor *output1_ = [mpsGraph convolution2DDataGradientWithIncomingGradientTensor:unfold weightsTensor:weights1 outputShape:@[@(B*out_D),@(out_C),@(out_H),@(out_W)] forwardConvolutionDescriptor:conv2DDescriptor name:Nil];
+      MPSGraphTensor *output1 = [mpsGraph reshapeTensor:output1_ withShape:@[@(B),@(out_D),@(out_C),@(out_H),@(out_W)] name:nil];
+
+      if (is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_2_PLUS)) {
+        outputTensor = [mpsGraph transposeTensor:output1 permutation:@[@0,@2,@1,@3,@4] name:nil];
+      } else {
+        outputTensor = permuteTensor(mpsGraph, output1_, @[@0,@2,@1,@3,@4]);
+      }
+
+      newCachedGraph->inputTensor_ = inputTensor;
+      newCachedGraph->weightTensor_ = weightTensor;
+      newCachedGraph->outputTensor_ = outputTensor;
+    });
+
+    auto inputPlaceholder = Placeholder(cachedGraph->inputTensor_, input_t, inputShape);
+    auto weightsPlaceholder = Placeholder(cachedGraph->weightTensor_, weight_t);
+    auto outputPlaceholder = Placeholder(cachedGraph->outputTensor_, *output);
+
+    NSMutableDictionary<MPSGraphTensor*, MPSGraphTensorData*>* feeds =
+      [[[NSMutableDictionary alloc] initWithCapacity:3] autorelease];
+
+    feeds[inputPlaceholder.getMPSGraphTensor()] = inputPlaceholder.getMPSGraphTensorData();
+    feeds[weightsPlaceholder.getMPSGraphTensor()] = weightsPlaceholder.getMPSGraphTensorData();
+    NSDictionary<MPSGraphTensor*, MPSGraphTensorData*>* results =
+        @{outputPlaceholder.getMPSGraphTensor() : outputPlaceholder.getMPSGraphTensorData()};
+
+    runMPSGraph(stream, cachedGraph->graph(), feeds, results);
   }
+
+  return *output;
 }
 
 static Tensor _mps_convolution_impl(const Tensor& input_t_,
@@ -796,11 +873,13 @@ Tensor _mps_convolution_transpose(const Tensor& input_t,
                                   IntArrayRef stride,
                                   IntArrayRef dilation,
                                   int64_t groups) {
-  TORCH_CHECK(input_t.dim() < 5, "ConvTranspose 3D is not supported on MPS");
+  bool is3DConv = input_t.dim() == 5;
 
-  auto output_t =
-      mps_convolution_transpose_forward(input_t, weight_t, padding, output_padding, stride, dilation, groups);
-  return output_t;
+  if (is3DConv) {
+    return _mps_conv_transpose_3d(input_t, weight_t, padding, output_padding, stride, dilation, groups);
+  } else {
+    return mps_convolution_transpose_forward(input_t, weight_t, padding, output_padding, stride, dilation, groups);
+  }
 }
 
 static Tensor mps_convolution_transpose_backward_input(const Tensor& grad_output_t,
