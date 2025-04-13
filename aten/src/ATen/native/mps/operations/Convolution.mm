@@ -289,6 +289,84 @@ static Tensor _mps_conv_transpose_3d(const Tensor& input_t,
   return *output;
 }
 
+static MPSGraphTensor* _conv_transpose_3d_backward_input_aux(const Tensor& input_t,
+                                                             const Tensor& weight_t,
+                                                             IntArrayRef padding,
+                                                             IntArrayRef stride,
+                                                             IntArrayRef dilation,
+                                                             int64_t groups,
+                                                             MPSGraphTensor* inputTensor,
+                                                             MPSGraphTensor* weightTensor,
+                                                             MPSShape* inputShape,
+                                                             MPSShape* weightShape,
+                                                             MPSGraph* mpsGraph) {
+  using namespace at::native::mps;
+  std::vector<int64_t> output_shape = conv_output_size(input_t.sizes(), weight_t.sizes(), padding, stride, dilation);
+  const int64_t B = inputShape[0].intValue;
+  const int64_t in_C = inputShape[1].intValue;
+  const int64_t out_C =  weightShape[0].intValue;
+
+  const int64_t k_D = weightShape[2].intValue;
+  const int64_t k_H = weightShape[3].intValue;
+  const int64_t k_W = weightShape[4].intValue;
+
+  const int64_t in_D = inputShape[2].intValue;
+  const int64_t in_H = inputShape[3].intValue;
+  const int64_t in_W = inputShape[4].intValue;
+
+  const int64_t out_D = output_shape[2];
+  const int64_t out_H = output_shape[3];
+  const int64_t out_W = output_shape[4];
+
+  MPSGraphTensor *weights1 = [mpsGraph reshapeTensor:weightTensor withShape:@[@(out_C),@(in_C*k_D/groups),@(k_H),@(k_W)] name:nil];
+  MPSGraphTensor *unfold;
+
+  // The actual convolution is performed as conv2D with kernel in depth dimension as additional input channels
+  // The spatial depth dimension will be moved to batch dimension (and needs to be permuted afterward)
+  MPSGraphConvolution2DOpDescriptor* conv2dDescriptor = [[MPSGraphConvolution2DOpDescriptor new] autorelease];
+  fill_conv_desc(
+      conv2dDescriptor,
+      stride[2],
+      stride[1],
+      dilation[2],
+      dilation[1],
+      padding[2],
+      padding[1],
+      at::MemoryFormat::Contiguous,
+      groups);
+
+  if((k_D==1) && (k_H==1) && (k_W==1) && (stride[0]==1) && (stride[1]==1) && (stride[2]==1) && (padding[0]==0)
+      && (padding[1]==0) && (padding[2]==0)) {
+    // 1x1x1 convolution (aka linear layer) no permutation/unfold necessary
+    MPSGraphTensor *input1 = [mpsGraph reshapeTensor:inputTensor withShape:@[@(B),@(in_C),@(in_D),@(in_H*in_W)] name:nil];
+    MPSGraphTensor *output_ = [mpsGraph convolution2DWithSourceTensor:input1 weightsTensor:weights1 descriptor:conv2dDescriptor name:Nil];
+    return [mpsGraph reshapeTensor:output_ withShape:@[@(B),@(out_C),@(in_D),@(in_H),@(in_W)] name:nil];
+  }
+
+  if((k_D!=1) || (stride[0]!=1) || (padding[0]!=0)) {
+    MPSGraphTensor *input1 = [mpsGraph reshapeTensor:inputTensor withShape:@[@(B*in_C),@1,@(in_D),@(in_H*in_W)] name:nil];
+    MPSGraphTensor *unfold_ = unfoldConvolution2D(mpsGraph, input1, stride[0], padding[0], dilation[0], k_D, getMPSScalarType(input_t),nil,true, groups);
+    unfold = permuteReshape(mpsGraph, unfold_, @[@(B),@(in_C),@(k_D),@(out_D),@(in_H),@(in_W)], @[@0,@3,@1,@2,@4,@5], @[@(B*out_D),@(in_C*k_D),@(in_H),@(in_W)]);
+  } else{
+    // special case for which no unfold from 3D to 2D is required and simple reshape/permute is equivalent
+    MPSGraphTensor *unfold_;
+    if (is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_1_PLUS)) {
+      unfold_ = [mpsGraph transposeTensor:inputTensor permutation:@[@0,@2,@1,@3,@4] name:nil];
+    } else {
+      unfold_ = permuteTensor(mpsGraph, inputTensor, @[@0,@2,@1,@3,@4]);
+    }
+    unfold = [mpsGraph reshapeTensor:unfold_ withShape:@[@(B*out_D),@(in_C*k_D),@(in_H),@(in_W)] name:nil];
+  }
+
+  MPSGraphTensor *output__ = [mpsGraph convolution2DWithSourceTensor:unfold weightsTensor:weights1 descriptor:conv2dDescriptor name:Nil];
+  MPSGraphTensor *output_ = [mpsGraph reshapeTensor:output__ withShape:@[@(B),@(out_D),@(out_C),@(out_H),@(out_W)] name:nil];
+  if (is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_1_PLUS)) {
+    return [mpsGraph transposeTensor:output_ permutation:@[@0,@2,@1,@3,@4] name:nil];
+  } else {
+    return permuteTensor(mpsGraph, output_, @[@0,@2,@1,@3,@4]);
+  }
+}
+
 static Tensor _mps_convolution_impl(const Tensor& input_t_,
                                     const Tensor& weight_t,
                                     const std::optional<Tensor>& bias_opt,
@@ -296,7 +374,8 @@ static Tensor _mps_convolution_impl(const Tensor& input_t_,
                                     IntArrayRef stride,
                                     IntArrayRef dilation,
                                     int64_t groups,
-                                    std::optional<IntArrayRef> input_shape) {
+                                    std::optional<IntArrayRef> input_shape,
+                                    bool isConv3DTranspose) {
   const bool is_macOS_13_2_or_newer = is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_2_PLUS);
   const bool is_macOS_15_0_or_newer = is_macos_13_or_newer(MacOSVersion::MACOS_VER_15_0_PLUS);
   Tensor input_t = input_t_;
@@ -417,23 +496,28 @@ static Tensor _mps_convolution_impl(const Tensor& input_t_,
       MPSGraphTensor* weightTensor = mpsGraphRankedPlaceHolder(mpsGraph, weight_t);
       MPSGraphTensor* outputTensor;
       if (is3DConv) {
-        MPSGraphConvolution3DOpDescriptor* conv3dDescriptor_ = [[MPSGraphConvolution3DOpDescriptor new] autorelease];
-        fill_conv3d_desc(conv3dDescriptor_,
-                         stride[2],
-                         stride[1],
-                         stride[0],
-                         dilation[2],
-                         dilation[1],
-                         dilation[0],
-                         padding[2],
-                         padding[1],
-                         padding[0],
-                         groups);
+        if (isConv3DTranspose) {
+          outputTensor = _conv_transpose_3d_backward_input_aux(input_t, weight_t, padding, stride, dilation, groups, inputTensor, weightTensor, inputShape, weightShape, mpsGraph);
+        } else {
+          MPSGraphConvolution3DOpDescriptor* conv3dDescriptor_ = [[MPSGraphConvolution3DOpDescriptor new] autorelease];
+          fill_conv3d_desc(conv3dDescriptor_,
+                           stride[2],
+                           stride[1],
+                           stride[0],
+                           dilation[2],
+                           dilation[1],
+                           dilation[0],
+                           padding[2],
+                           padding[1],
+                           padding[0],
+                           groups);
 
-        outputTensor = [mpsGraph convolution3DWithSourceTensor:inputTensor
-                                                 weightsTensor:weightTensor
-                                                    descriptor:conv3dDescriptor_
-                                                          name:nil];
+          outputTensor = [mpsGraph convolution3DWithSourceTensor:inputTensor
+                                                   weightsTensor:weightTensor
+                                                      descriptor:conv3dDescriptor_
+                                                            name:nil];
+        }
+
       } else if (isDepthwiseConv) {
         MPSGraphDepthwiseConvolution3DOpDescriptor* depthWiseConv3dDescriptor_ =
             [[MPSGraphDepthwiseConvolution3DOpDescriptor new] autorelease];
@@ -531,7 +615,7 @@ Tensor _mps_convolution(const Tensor& input_t,
                         IntArrayRef stride,
                         IntArrayRef dilation,
                         int64_t groups) {
-  return _mps_convolution_impl(input_t, weight_t, bias_opt, padding, stride, dilation, groups, std::nullopt);
+  return _mps_convolution_impl(input_t, weight_t, bias_opt, padding, stride, dilation, groups, std::nullopt, false);
 }
 
 static Tensor mps_convolution_backward_input(IntArrayRef input_size,
@@ -688,6 +772,62 @@ static Tensor mps_convolution_backward_input(IntArrayRef input_size,
   return *grad_input;
 }
 
+static MPSGraphTensor* _conv_transpose_3d_backward_weights_aux(const Tensor& input_t,
+                                                               MPSShape* inputShape,
+                                                               MPSShape* weightShape,
+                                                               MPSShape* gradOutputShape,
+                                                               IntArrayRef padding,
+                                                               IntArrayRef stride,
+                                                               IntArrayRef dilation,
+                                                               MPSGraph* mpsGraph,
+                                                               MPSGraphTensor* inputTensor,
+                                                               MPSGraphTensor* gradOutputTensor,
+                                                               int64_t groups) {
+  using namespace at::native::mps;
+  const int64_t B = inputShape[0].intValue;
+  const int64_t in_C = inputShape[1].intValue;
+  const int64_t out_C = weightShape[0].intValue;
+
+  const int64_t k_D = weightShape[2].intValue;
+  const int64_t k_H = weightShape[3].intValue;
+  const int64_t k_W = weightShape[4].intValue;
+  const int64_t in_D = inputShape[2].intValue;
+  const int64_t in_H = inputShape[3].intValue;
+  const int64_t in_W = inputShape[4].intValue;
+
+  const int64_t out_D = gradOutputShape[2].intValue;
+  const int64_t out_H = gradOutputShape[3].intValue;
+  const int64_t out_W = gradOutputShape[4].intValue;
+
+  MPSGraphConvolution2DOpDescriptor* conv2dDescriptor = [[MPSGraphConvolution2DOpDescriptor new] autorelease];
+  fill_conv_desc(
+      conv2dDescriptor,
+      stride[2],
+      stride[1],
+      dilation[2],
+      dilation[1],
+      padding[2],
+      padding[1],
+      at::MemoryFormat::Contiguous,
+      groups);
+
+  MPSGraphTensor *weight_grad_;
+  if((k_D==1) && (k_H==1) && (k_W==1) && (stride[0]==1) && (stride[1]==1) && (stride[2]==1) && (padding[0]==0) && (padding[1]==0) && (padding[2]==0)) {
+    //1x1x1 convolution (aka linear layer) no permutation/unfold necessary
+    MPSGraphTensor *input1 = [mpsGraph reshapeTensor:inputTensor withShape:@[@(B),@(in_C),@(in_D),@(in_H*in_W)] name:nil];
+    MPSGraphTensor *output_grad = [mpsGraph reshapeTensor:inputTensor withShape:@[@(B),@(out_C),@(out_D),@(out_H*out_W)] name:nil];
+    weight_grad_ = [mpsGraph convolution2DWeightsGradientWithIncomingGradientTensor:output_grad sourceTensor:input1 outputShape:@[@(out_C),@(in_C/groups),@(1),@(1)] forwardConvolutionDescriptor:conv2dDescriptor name:nil];
+  } else{
+    // unfold input tensor
+    MPSGraphTensor *input1 = [mpsGraph reshapeTensor:inputTensor withShape:@[@(B*in_C),@1,@(in_D),@(in_H*in_W)] name:nil];
+    MPSGraphTensor *unfold_ = unfoldConvolution2D(mpsGraph, input1, stride[0], padding[0], dilation[0], k_D, getMPSScalarType(input_t), nil, true, groups); //2nd last arg nil = fwd, last arg true not transposed
+    MPSGraphTensor *unfold = permuteReshape(mpsGraph, unfold_, @[@(B),@(in_C),@(k_D),@(out_D),@(in_H),@(in_W)], @[@0,@3,@1,@2,@4,@5], @[@(B*out_D),@(in_C*k_D),@(in_H),@(in_W)]);
+    MPSGraphTensor *output_grad = permuteReshape(mpsGraph, gradOutputTensor, @[@(B),@(out_C),@(out_D),@(out_H),@(out_W)], @[@0,@2,@1,@3,@4], @[@(B*out_D),@(out_C),@(out_H),@(out_W)]);
+    weight_grad_ = [mpsGraph convolution2DWeightsGradientWithIncomingGradientTensor:output_grad sourceTensor:unfold outputShape:@[@(out_C),@(in_C*k_D/groups),@(k_H),@(k_W)] forwardConvolutionDescriptor:conv2dDescriptor name:nil];
+  }
+  return [mpsGraph reshapeTensor:weight_grad_ withShape:weightShape name:nil];
+}
+
 static Tensor mps_convolution_backward_weights(IntArrayRef weight_size,
                                                const Tensor& grad_output_t,
                                                const Tensor& input_t,
@@ -695,7 +835,8 @@ static Tensor mps_convolution_backward_weights(IntArrayRef weight_size,
                                                IntArrayRef stride,
                                                IntArrayRef dilation,
                                                int64_t groups,
-                                               bool bias_defined) {
+                                               bool bias_defined,
+                                               bool isConv3dTranspose) {
   using namespace at::native::mps;
   using namespace mps;
   bool is3DConv = input_t.dim() == 5;
@@ -751,23 +892,28 @@ static Tensor mps_convolution_backward_weights(IntArrayRef weight_size,
 
       MPSGraphTensor* gradWeightTensor;
       if (is3DConv) {
-        MPSGraphConvolution3DOpDescriptor* conv3dDescriptor_ = [[MPSGraphConvolution3DOpDescriptor new] autorelease];
-        fill_conv3d_desc(conv3dDescriptor_,
-                         stride[2],
-                         stride[1],
-                         stride[0],
-                         dilation[2],
-                         dilation[1],
-                         dilation[0],
-                         padding[2],
-                         padding[1],
-                         padding[0],
-                         groups);
-        gradWeightTensor = [mpsGraph convolution3DWeightsGradientWithIncomingGradientTensor:gradOutputTensor
-                                                                               sourceTensor:inputTensor
-                                                                                outputShape:mps_weight_shape
-                                                               forwardConvolutionDescriptor:conv3dDescriptor_
-                                                                                       name:nil];
+        if (isConv3dTranspose) {
+          MPSGraphConvolution3DOpDescriptor* conv3dDescriptor_ = [[MPSGraphConvolution3DOpDescriptor new] autorelease];
+          fill_conv3d_desc(conv3dDescriptor_,
+                           stride[2],
+                           stride[1],
+                           stride[0],
+                           dilation[2],
+                           dilation[1],
+                           dilation[0],
+                           padding[2],
+                           padding[1],
+                           padding[0],
+                           groups);
+          gradWeightTensor = [mpsGraph convolution3DWeightsGradientWithIncomingGradientTensor:gradOutputTensor
+                                                                                 sourceTensor:inputTensor
+                                                                                  outputShape:mps_weight_shape
+                                                                 forwardConvolutionDescriptor:conv3dDescriptor_
+                                                                                         name:nil];
+        } else {
+          MPSShape* gradOutputShape = getMPSShape(grad_output_t);
+          gradWeightTensor = _conv_transpose_3d_backward_weights_aux(input_t, inputShape, mps_weight_shape, gradOutputShape, padding, stride, dilation, mpsGraph, inputTensor, gradOutputTensor, groups);
+        }
       } else if (isDepthwiseConv) {
         MPSGraphDepthwiseConvolution3DOpDescriptor* depthWiseConv3dDescriptor_ =
             [[MPSGraphDepthwiseConvolution3DOpDescriptor new] autorelease];
@@ -847,7 +993,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> mps_convolution_backward(const at
     }
     if (output_mask[1]) {
       grad_weight = mps_convolution_backward_weights(
-          weight.sizes(), grad_output, input, padding, stride, dilation, groups, output_mask[2]);
+          weight.sizes(), grad_output, input, padding, stride, dilation, groups, output_mask[2], false);
     }
   }
 
@@ -888,8 +1034,9 @@ static Tensor mps_convolution_transpose_backward_input(const Tensor& grad_output
                                                        IntArrayRef stride,
                                                        IntArrayRef dilation,
                                                        int64_t groups,
-                                                       IntArrayRef input_shape) {
-  return _mps_convolution_impl(grad_output_t, weight_t, std::nullopt, padding, stride, dilation, groups, input_shape);
+                                                       IntArrayRef input_shape,
+                                                       bool is3DConv) {
+  return _mps_convolution_impl(grad_output_t, weight_t, std::nullopt, padding, stride, dilation, groups, input_shape, is3DConv);
 }
 
 static Tensor mps_convolution_transpose_backward_weight(IntArrayRef weight_size,
@@ -898,9 +1045,10 @@ static Tensor mps_convolution_transpose_backward_weight(IntArrayRef weight_size,
                                                         IntArrayRef padding,
                                                         IntArrayRef stride,
                                                         IntArrayRef dilation,
-                                                        int64_t groups) {
+                                                        int64_t groups,
+                                                        bool is3DConv) {
   return mps_convolution_backward_weights(
-      weight_size, input_t, grad_output_t, padding, stride, dilation, groups, false);
+      weight_size, input_t, grad_output_t, padding, stride, dilation, groups, false, is3DConv);
 }
 
 std::tuple<Tensor, Tensor> mps_convolution_transpose_backward(const Tensor& input,
@@ -913,13 +1061,14 @@ std::tuple<Tensor, Tensor> mps_convolution_transpose_backward(const Tensor& inpu
                                                               int64_t groups,
                                                               std::array<bool, 2> output_mask) {
   Tensor grad_input, grad_weight;
+  bool is3DConv = input.dim() == 5;
   if (output_mask[0]) {
     grad_input =
-        mps_convolution_transpose_backward_input(grad_output, weight, padding, stride, dilation, groups, input.sizes());
+        mps_convolution_transpose_backward_input(grad_output, weight, padding, stride, dilation, groups, input.sizes(), is3DConv);
   }
   if (output_mask[1]) {
     grad_weight = mps_convolution_transpose_backward_weight(
-        weight.sizes(), grad_output, input, padding, stride, dilation, groups);
+        weight.sizes(), grad_output, input, padding, stride, dilation, groups, is3DConv);
   }
 
   return std::tuple<Tensor, Tensor>{grad_input, grad_weight};
