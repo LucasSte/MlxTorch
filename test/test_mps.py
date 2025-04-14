@@ -188,7 +188,8 @@ def mps_ops_grad_modifier(ops):
         'nn.functional.conv3d': [torch.float16],
         'nn.functional.conv_transpose1d': [torch.float16],
         'nn.functional.conv_transpose2d': [torch.float16],
-        'nn.functional.conv_transpose3d': [torch.float16],
+        # ConvTranspose3d causes a runtime error due to the sample input (similar to Conv3d).
+        'nn.functional.conv_transpose3d': [torch.float16, torch.float32],
     }
 
     MACOS_13_3_XFAILLIST_GRAD = {
@@ -206,7 +207,6 @@ def mps_ops_grad_modifier(ops):
 
         # Exception: Caused by sample input at index 3 on MPS
         'nn.functional.conv3d': [torch.float32],
-
 
     }
 
@@ -569,7 +569,6 @@ def mps_ops_modifier(ops):
         'linalg.eig': None,
         'linalg.eigvals': None,
         'put': None,
-        'nn.functional.conv_transpose3d': None,
         '__rsub__': None,
         'cauchy_': None,
         'cauchy': None,
